@@ -34,28 +34,26 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 	
 	private Stage window;
 	private Scene scene;
-	private GridPane grid, initialPropGrid;
+	private GridPane grid, propositionGrid;
 	private VBox logicTypeVBox;
-	private String auxOpsString;
-	private HBox chainWithRow, completionButtonsRow;
-	private VBox operandRadioButtons;
+	private String firstAuxOpsStr, secondAuxOpsStr, currentPropositionStr;
+	private HBox completionButtonsRow;
+	private VBox layout;
 	//private StackPane leftLabelStack, rightLabelStack, operatorLabelStack, auxOpsLabelStack, leftOperandChoiceStack, rightOperandChoiceStack, operatorChoiceStack;
-	private Label logicTypeLabel, initialPropositionLabel, atomicLabel, firstOperandLabel, rightOperandLabel, operatorLabel, 
-		auxOpsLabel, usingAuxOpsLabel, stagingLabel, chainWithOperatorLabel, asLabel, currentChainLabel;
-	private ComboBox<AtomicProposition> firstOperandChoice, secondOperandChoice; 
-	private ComboBox<Operator> stagingOperatorChoice, chainWithOperatorChoice;
-	private ComboBox<String> chainWithOperandChoice;
-	private ComboBox<AuxillaryOperator> stagingAuxOpsChoice, chainWithAuxOpsChoice;
-	private CheckBox atomicCheck;
-	private TextField auxOpsStagingTextField, auxOpsChainingTextField, stagedPropField, currentChainField;
-	private Button stagingAddAuxOp, chainingAddAuxOp, addPropToStaging, addPropToChain, completeProp, clearAll;
-	private RadioButton asFirstOperandCheck, asSecondOperandCheck;
-	private ToggleGroup operandToggleGroup, logicTypeGroup;
+	private Label singlePropLabel, firstOperandLabel, rightOperandLabel, operatorLabel, currentPropositionLabel;
+	private ComboBox<Proposition> firstOperandChoice, secondOperandChoice; 
+	private ComboBox<Operator> operatorChoice;
+	//private ComboBox<String> chainWithOperandChoice;
+	//private ComboBox<AuxillaryOperator> stagingAuxOpsChoice, chainWithAuxOpsChoice;
+	private CheckBox singlePropCheck;
+	private TextField currentPropositionField;
+	private Button addAuxOpToFirst, addAuxOpToSecond, addToPropLists, clearAll, completeProp;
 	private LogicType logicType;
 	private WindowController windowController;
-	private Proposition rootProposition, stagedProposition;
-	private ArrayList<AtomicProposition> propositionList;
-	private ArrayList<AuxillaryOperator> auxOpsForStaging, auxOpsForChaining;
+	private Proposition rootProposition;
+	private ArrayList<Proposition> firstPropositionList, secondPropositionList;
+	private ArrayList<AuxillaryOperator> firstAuxOps, secondAuxOps;
+	private Tooltip auxOpPopup;
 	
 	
 	public PropBuilder(LogicType chosenType, WindowController controller) {
@@ -63,443 +61,223 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 		windowController = controller;
 		
 		
-		propositionList = new ArrayList<AtomicProposition>(Arrays.asList(new AtomicProposition(null, "p"), 
-				new AtomicProposition(null, "q"), 
-				new AtomicProposition(null, "r"), 
-				new AtomicProposition(null, "a"), 
-				new AtomicProposition(null, "b"), 
-				new AtomicProposition(null, "c")
-				));
-				
-		//propositionList = new ArrayList<>(Arrays.asList("p", "q", "r", "a", "b", "c"));
-		auxOpsForStaging = new ArrayList<AuxillaryOperator>();
-		auxOpsForChaining = new ArrayList<AuxillaryOperator>();
+		initDefaults();
+
 		
-		auxOpsString = "";
+
 		
 		window = new Stage();
 		window.setTitle("Proposition Builder");
 		
-		grid = new GridPane();
-		grid.setVgap(20);
-		grid.setHgap(20);
-		grid.setPadding(new Insets(20, 20, 30, 20));
-		//grid.setGridLinesVisible(true);
+
+		
+		layout = new VBox(20);
+		layout.setAlignment(Pos.CENTER);
+		layout.setPadding(new Insets(20, 20, 20, 20));
 		
 		
-	
-		/*
-		logicTypeLabel = new Label("Select logic type");
-		GridPane.setConstraints(logicTypeLabel, 0, 0);
-		
-		logicTypeGroup = new ToggleGroup();
-		logicTypeGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
-			public void changed(ObservableValue<? extends Toggle> observed, Toggle oldVal, Toggle newVal) {
-				if (logicTypeGroup.getSelectedToggle() == classicalRb) {
-					logicType = LogicType.CLASSICAL;
-				} else if (logicTypeGroup.getSelectedToggle() == predicateRb) {
-					logicType = LogicType.PREDICATE;
-				} else if (logicTypeGroup.getSelectedToggle() == modalRb) {
-					logicType = LogicType.MODAL;
-				} else {
-					System.out.println("Some error");
-				}
-			}
-		});
-		
-		classicalRb = new RadioButton("Classical");
-		classicalRb.setToggleGroup(logicTypeGroup);
-		
-		predicateRb = new RadioButton("Predicate");
-		predicateRb.setToggleGroup(logicTypeGroup);
-		
-		modalRb = new RadioButton("Modal");
-		modalRb.setToggleGroup(logicTypeGroup);
-		
-		logicTypeVBox = new VBox(7.5);
-		logicTypeVBox.getChildren().addAll(classicalRb, predicateRb, modalRb);
-		GridPane.setConstraints(logicTypeVBox, 0, 1);
-		
-		*/
-		
-		// ====================================== LABELS
-		
-		initialPropositionLabel = new Label("Initial proposition");
-		initialPropositionLabel.setAlignment(Pos.CENTER);
-		initialPropositionLabel.setPrefWidth(130);
-		GridPane.setConstraints(initialPropositionLabel, 0, 0, 1, 1, HPos.CENTER, VPos.CENTER);
-		
-		auxOpsLabel = new Label("Auxillary operator");
-		auxOpsLabel.setAlignment(Pos.CENTER);
-		auxOpsLabel.setPrefWidth(130);
-		GridPane.setConstraints(auxOpsLabel, 0, 0);
-		
-		atomicLabel = new Label("Atomic");
-		atomicLabel.setAlignment(Pos.CENTER);
-		atomicLabel.setPrefWidth(80);
-		GridPane.setConstraints(atomicLabel, 3, 0);
-		
-		firstOperandLabel = new Label("First operand");
-		firstOperandLabel.setAlignment(Pos.CENTER);
-		firstOperandLabel.setPrefWidth(100);
-		GridPane.setConstraints(firstOperandLabel, 4, 0);
-		
-		rightOperandLabel = new Label("Second operand");
-		rightOperandLabel.setAlignment(Pos.CENTER);
-		rightOperandLabel.setPrefWidth(100);
-		GridPane.setConstraints(rightOperandLabel, 6, 0);
-		
-		operatorLabel = new Label("Operator");
-		operatorLabel.setAlignment(Pos.CENTER);
-		operatorLabel.setPrefWidth(100);
-		GridPane.setConstraints(operatorLabel, 5, 0);
-		
-		stagingLabel = new Label("Staged proposition");
-		stagingLabel.setAlignment(Pos.CENTER);
-		GridPane.setConstraints(stagingLabel, 0, 4, 1, 1, HPos.CENTER, VPos.CENTER);
-		
-		chainWithOperatorLabel = new Label("Chain with operator");
-		chainWithOperatorLabel.setAlignment(Pos.CENTER);
-		
-		asLabel = new Label("as");
-		asLabel.setAlignment(Pos.CENTER);
-		
-		currentChainLabel = new Label("Current chain");
-		currentChainLabel.setAlignment(Pos.CENTER);
-		GridPane.setConstraints(currentChainLabel, 0, 8, 1, 1, HPos.CENTER, VPos.CENTER);
-		
-		usingAuxOpsLabel = new Label("Using auxillary operators");
-		usingAuxOpsLabel.setAlignment(Pos.CENTER);
-		
-		// =============== RADIO BUTTONS
-		
-		operandToggleGroup = new ToggleGroup();
-		
-		asFirstOperandCheck = new RadioButton("First operand");
-		asFirstOperandCheck.setToggleGroup(operandToggleGroup);
-		asSecondOperandCheck = new RadioButton("Second operand");
-		asSecondOperandCheck.setToggleGroup(operandToggleGroup);
+
 		
 		
 		
-		// ============= CHECKBOXES
 		
-		atomicCheck = new CheckBox();
-		atomicCheck.setAlignment(Pos.CENTER);
-		atomicCheck.selectedProperty().addListener(new ChangeListener<Boolean>() {
+		
+		
+		
+		singlePropCheck = new CheckBox();
+		singlePropCheck.setAlignment(Pos.CENTER);
+		singlePropCheck.selectedProperty().addListener(new ChangeListener<Boolean>() {
 			@Override
 			public void changed(ObservableValue<? extends Boolean> observed, Boolean oldVal, Boolean newVal) {
-				if (atomicCheck.isSelected()) {
-					stagingOperatorChoice.setDisable(true);
+				if (singlePropCheck.isSelected()) {
+					operatorChoice.setDisable(true);
+					addAuxOpToSecond.setDisable(true);
 					secondOperandChoice.setDisable(true);
 				}else {
-					stagingOperatorChoice.setDisable(false);
+					operatorChoice.setDisable(false);
+					addAuxOpToSecond.setDisable(false);
 					secondOperandChoice.setDisable(false);
 				}
 				
 			}
 		});
-		StackPane stackForAtomicCheck = new StackPane();
-		stackForAtomicCheck.getChildren().add(atomicCheck);
-		GridPane.setConstraints(stackForAtomicCheck, 3, 1);
+		GridPane.setConstraints(singlePropCheck, 0, 1, 1, 1, HPos.CENTER, VPos.CENTER);
 		
-		// ============== COMBOBOX ITEMS
+		singlePropLabel = new Label("Single Proposition");
+		singlePropLabel.setAlignment(Pos.CENTER);
+		singlePropLabel.setPrefWidth(80);
+		GridPane.setConstraints(singlePropLabel, 0, 0);
 		
-		ArrayList<AuxillaryOperator> modalOps = new ArrayList<AuxillaryOperator>(Arrays.asList(new AuxillaryOperator(AuxillaryOperatorType.POSSIBLE), 
-				new AuxillaryOperator(AuxillaryOperatorType.NECESSARY),
-				new AuxillaryOperator(AuxillaryOperatorType.NOTPOSSIBLE),
-				new AuxillaryOperator(AuxillaryOperatorType.NOTNECESSARY)));
-		ArrayList<AuxillaryOperator> predicateOps = new ArrayList<AuxillaryOperator>(Arrays.asList(new AuxillaryOperator(AuxillaryOperatorType.UNIVERSAL), 
-				new AuxillaryOperator(AuxillaryOperatorType.EXISTENTIAL), 
-				new AuxillaryOperator(AuxillaryOperatorType.NOTUNIVERSAL), 
-				new AuxillaryOperator(AuxillaryOperatorType.NOTEXISTENTIAL)));
-		AuxillaryOperator negationOp = new AuxillaryOperator(AuxillaryOperatorType.NEGATION);
+		firstOperandLabel = new Label("First operand");
+		firstOperandLabel.setAlignment(Pos.CENTER);
+		firstOperandLabel.setPrefWidth(100);
+		GridPane.setConstraints(firstOperandLabel, 2, 0);
 		
-		// =============== COMBOBOXES
+		rightOperandLabel = new Label("Second operand");
+		rightOperandLabel.setAlignment(Pos.CENTER);
+		rightOperandLabel.setPrefWidth(100);
+		GridPane.setConstraints(rightOperandLabel, 5, 0);
 		
-		stagingAuxOpsChoice = new ComboBox<AuxillaryOperator>();
-		stagingAuxOpsChoice.getItems().addAll(negationOp);
-		if (logicType == LogicType.CLASSICAL) {
-			
-		}else if (logicType == LogicType.PREDICATE) {
-			stagingAuxOpsChoice.getItems().addAll(predicateOps);
-		}else if (logicType == LogicType.MODAL) {
-			stagingAuxOpsChoice.getItems().addAll(modalOps);
-		}
-		GridPane.setConstraints(stagingAuxOpsChoice, 0, 1, 1, 1, HPos.CENTER, VPos.CENTER);
+		operatorLabel = new Label("Operator");
+		operatorLabel.setAlignment(Pos.CENTER);
+		operatorLabel.setPrefWidth(100);
+		GridPane.setConstraints(operatorLabel, 3, 0);
 		
+		currentPropositionLabel = new Label("Current proposition");
+		currentPropositionLabel.setAlignment(Pos.CENTER);
+		currentPropositionLabel.setPrefWidth(150);
+
 		
-		firstOperandChoice = new ComboBox<AtomicProposition>();
-		firstOperandChoice.getItems().addAll(propositionList);
-		GridPane.setConstraints(firstOperandChoice, 4, 1, 1, 1, HPos.CENTER, VPos.CENTER);
+		firstOperandChoice = new ComboBox<Proposition>();
+		firstOperandChoice.getItems().addAll(firstPropositionList);
+		GridPane.setConstraints(firstOperandChoice, 2, 1, 1, 1, HPos.CENTER, VPos.CENTER);
 		
-		secondOperandChoice = new ComboBox<AtomicProposition>();
-		secondOperandChoice.getItems().addAll(propositionList);
-		GridPane.setConstraints(secondOperandChoice, 6, 1, 1, 1, HPos.CENTER, VPos.CENTER);
+		secondOperandChoice = new ComboBox<Proposition>();
+		secondOperandChoice.getItems().addAll(secondPropositionList);
+		GridPane.setConstraints(secondOperandChoice, 5, 1, 1, 1, HPos.CENTER, VPos.CENTER);
 		
-		stagingOperatorChoice = new ComboBox<Operator>();
-		stagingOperatorChoice.getItems().addAll(new Operator(OperatorType.OR), 
+		operatorChoice = new ComboBox<Operator>();
+		operatorChoice.getItems().addAll(new Operator(OperatorType.OR), 
 				new Operator(OperatorType.AND), 
 				new Operator(OperatorType.IF), 
 				new Operator(OperatorType.EQUALS));
-		GridPane.setConstraints(stagingOperatorChoice, 5, 1, 1, 1, HPos.CENTER, VPos.CENTER);
+		GridPane.setConstraints(operatorChoice, 3, 1, 1, 1, HPos.CENTER, VPos.CENTER);
 		
-		chainWithOperatorChoice = new ComboBox<Operator>();
-		chainWithOperatorChoice.getItems().addAll(new Operator(OperatorType.OR), 
-				new Operator(OperatorType.AND), 
-				new Operator(OperatorType.IF), 
-				new Operator(OperatorType.EQUALS));
-		chainWithOperatorChoice.setDisable(true);
+		// ====== BUTTONS
 		
-		chainWithOperandChoice = new ComboBox<String>();
-		chainWithOperandChoice.getItems().addAll("First operand", "Second operand");
-		chainWithOperandChoice.setDisable(true);
+		addAuxOpToFirst = new Button("+");
+		addAuxOpToFirst.setOnAction(e -> {
+			firstAuxOps = addAuxOps();
+			currentPropositionField.setText(currentPropositionField.getText() + buildAuxOpStr(firstAuxOps, firstAuxOpsStr));
+		});
+		GridPane.setConstraints(addAuxOpToFirst, 1, 1);
 		
-		chainWithAuxOpsChoice = new ComboBox<AuxillaryOperator>();
-		chainWithAuxOpsChoice.getItems().addAll(negationOp);
-		if (logicType == LogicType.CLASSICAL) {
+		addAuxOpToSecond = new Button("+");
+		addAuxOpToSecond.setOnAction(e -> {
+			secondAuxOps = addAuxOps();
+			currentPropositionField.setText(currentPropositionField.getText() + buildAuxOpStr(secondAuxOps, secondAuxOpsStr));
+		});
+		GridPane.setConstraints(addAuxOpToSecond, 4, 1);
+		
+		addToPropLists = new Button("Add to lists");
+		addToPropLists.setOnAction(e -> {
+			addPropToLists();
+		});
+		GridPane.setConstraints(addToPropLists, 6, 1, 1, 1, HPos.CENTER, VPos.CENTER);
+		
+		clearAll = new Button("Clear all");
+		clearAll.setPrefWidth(180);
+		clearAll.setOnAction(e -> {
+			initDefaults();
 			
-		}else if (logicType == LogicType.PREDICATE) {
-			chainWithAuxOpsChoice.getItems().addAll(predicateOps);
-		}else if (logicType == LogicType.MODAL) {
-			chainWithAuxOpsChoice.getItems().addAll(modalOps);
-		}
-		chainWithAuxOpsChoice.setDisable(true);
-		
-		
-		// ========== BUTTONS
-		
-		stagingAddAuxOp = new Button("+");
-		stagingAddAuxOp.setOnAction(e -> {
-			addAuxOp(stagingAuxOpsChoice, auxOpsForStaging, auxOpsStagingTextField);
 		});
-		GridPane.setConstraints(stagingAddAuxOp, 1, 1);
-		
-
-		chainingAddAuxOp = new Button("+");
-		chainingAddAuxOp.setOnAction(e -> {
-			addAuxOp(chainWithAuxOpsChoice, auxOpsForChaining, auxOpsChainingTextField);
-		});
-		chainingAddAuxOp.setDisable(true);
-
-		
-		addPropToStaging = new Button("Add initial proposition to staging");
-		addPropToStaging.setPrefWidth(250);
-		addPropToStaging.setOnAction(e -> {
-			addNewPropToStaging();
-		});
-		GridPane.setConstraints(addPropToStaging, 7, 1, 1, 1, HPos.CENTER, VPos.CENTER);
-		
-		addPropToChain = new Button("Add staged proposition to chain");
-		addPropToChain.setPrefWidth(250);
-		addPropToChain.setDisable(true);
-		addPropToChain.setOnAction(e -> {
-			addPropToChain();
-		});
-		GridPane.setConstraints(addPropToChain, 7, 5, 1, 1, HPos.CENTER, VPos.CENTER);
 		
 		completeProp = new Button("Complete proposition");
-		completeProp.setPrefWidth(250);
-		completeProp.setDisable(true);
+		completeProp.setPrefWidth(180);
 		completeProp.setOnAction(e -> {
 			completeProposition();
 		});
-		//GridPane.setConstraints(completeProp, 7, 8, 1, 1, HPos.CENTER, VPos.CENTER);
 		
-		clearAll = new Button("Clear all");
-		clearAll.setPrefWidth(250);
-		clearAll.setOnAction(e -> {
-			clearAllPropositions();
-		});
-		//GridPane.setConstraints(clearAll, 0, 9, 8, 1, HPos.CENTER, VPos.CENTER);
-		
-		
-		// ================ TEXTFIELDS
-		
-		auxOpsStagingTextField = new TextField();
-		auxOpsStagingTextField.setEditable(false);
-		GridPane.setConstraints(auxOpsStagingTextField, 2, 1);
-		
-		auxOpsChainingTextField = new TextField();
-		auxOpsChainingTextField.setEditable(false);
-
-		
-		stagedPropField = new TextField();
-		stagedPropField.setEditable(false);
-		GridPane.setConstraints(stagedPropField, 0, 5, 1, 1);
-		
-		currentChainField = new TextField();
-		currentChainField.setEditable(false);
-		GridPane.setConstraints(currentChainField, 0, 9, 1, 1);
 		
 		
 		// ============ SEPARATORS
 		
 		Separator sep1 = new Separator(Orientation.HORIZONTAL);
-		GridPane.setConstraints(sep1, 0, 3, 1, 1, HPos.CENTER, VPos.CENTER, Priority.ALWAYS, Priority.ALWAYS, new Insets(20, 0, 20, 0));
-		
+		GridPane.setConstraints(sep1, 0, 2, 1, 1, HPos.CENTER, VPos.CENTER, Priority.ALWAYS, Priority.ALWAYS, new Insets(20, 0, 20, 0));
+				
 		Separator sep2 = new Separator(Orientation.HORIZONTAL);
 		GridPane.setConstraints(sep2, 0, 7, 1, 1, HPos.CENTER, VPos.CENTER, Priority.ALWAYS, Priority.ALWAYS, new Insets(20, 0, 20, 0));
 		
-		// ================== H and V BOXES, GRIDS
+		// ======== TEXTFIELDS
 		
-		operandRadioButtons = new VBox(10);
-		operandRadioButtons.setAlignment(Pos.CENTER_LEFT);
-		operandRadioButtons.getChildren().addAll(asFirstOperandCheck, asSecondOperandCheck);
-		//GridPane.setConstraints(operandRadioButtons, 0, 7, 7, 1, HPos.CENTER, VPos.CENTER);
+		currentPropositionField = new TextField();
+		currentPropositionField.setEditable(false);
 		
-		initialPropGrid = new GridPane();
-		initialPropGrid.setVgap(10);
-		initialPropGrid.setHgap(10);
-		initialPropGrid.getChildren().addAll(auxOpsLabel, atomicLabel, firstOperandLabel, rightOperandLabel, operatorLabel, 
-				stagingAuxOpsChoice, firstOperandChoice, secondOperandChoice, auxOpsStagingTextField, stagingAddAuxOp, 
-				stagingOperatorChoice, stackForAtomicCheck, addPropToStaging);
-		GridPane.setConstraints(initialPropGrid, 0, 1);
+		// =========================== LAYOUTS
 		
-		chainWithRow = new HBox(10);
-		chainWithRow.setAlignment(Pos.CENTER);
-		chainWithRow.getChildren().addAll(usingAuxOpsLabel, chainWithAuxOpsChoice, chainingAddAuxOp, auxOpsChainingTextField, chainWithOperatorLabel, 
-				chainWithOperatorChoice, asLabel, chainWithOperandChoice, addPropToChain);
-		GridPane.setConstraints(chainWithRow, 0, 6);
+		propositionGrid = new GridPane();
+		propositionGrid.setVgap(20);
+		propositionGrid.setHgap(20);
+		propositionGrid.getChildren().addAll(singlePropCheck, singlePropLabel, firstOperandLabel, rightOperandLabel, operatorLabel, 
+				firstOperandChoice, secondOperandChoice, operatorChoice, 
+				addAuxOpToFirst, addAuxOpToSecond, addToPropLists);
 		
 		completionButtonsRow = new HBox(10);
 		completionButtonsRow.setAlignment(Pos.CENTER); 
 		completionButtonsRow.getChildren().addAll(clearAll, completeProp);
 		GridPane.setConstraints(completionButtonsRow, 0, 10, 1, 1, HPos.CENTER, VPos.CENTER);
 		
-		// ============ ADD TO GRID
+		layout.getChildren().addAll(propositionGrid, sep1, currentPropositionLabel, currentPropositionField, sep2, completionButtonsRow);
 		
-		grid.getChildren().addAll(initialPropositionLabel, initialPropGrid, stagingLabel, currentChainLabel, 
-				stagedPropField, currentChainField, completionButtonsRow,
-				sep1, sep2, chainWithRow);
+
 		
-		scene = new Scene(grid);
+		scene = new Scene(layout);
 		window.setScene(scene);
 		window.showAndWait();
 	}
 	
-	public void addAuxOp(ComboBox<AuxillaryOperator> choice, ArrayList<AuxillaryOperator> auxOpList, TextField auxOpField) {
-		if (choice.getSelectionModel().isEmpty()) {
-			WarningModal warning = new WarningModal("Please choose an auxillary operator");
-		}else {
-			AuxillaryOperator auxOp = choice.getSelectionModel().getSelectedItem().copy();
-			auxOpsString = auxOp.toString() + auxOpsString;
-			auxOpList.add(0, auxOp);
-			auxOpField.setText(auxOpsString);
-		}
-		
-	}
 
 	
-	public void addNewPropToStaging() {
-		if ((firstOperandChoice.getSelectionModel().isEmpty() & atomicCheck.isSelected() == true) | 
+	public boolean isValidProposition() {
+		if ((firstOperandChoice.getSelectionModel().isEmpty() & singlePropCheck.isSelected() == true) | 
 				((firstOperandChoice.getSelectionModel().isEmpty() |
-						stagingOperatorChoice.getSelectionModel().isEmpty() | 
-						secondOperandChoice.getSelectionModel().isEmpty()) & atomicCheck.isSelected() == false)) {
-			WarningModal warning = new WarningModal("Please choose a valid proposition");
+						operatorChoice.getSelectionModel().isEmpty() | 
+						secondOperandChoice.getSelectionModel().isEmpty()) & singlePropCheck.isSelected() == false)) {
+			return false;
+		
 		}else {
-			String variable = firstOperandChoice.getSelectionModel().getSelectedItem().getVariableName();
-			AtomicProposition firstAtom = firstOperandChoice.getSelectionModel().getSelectedItem();
-			AtomicProposition secondAtom = secondOperandChoice.getSelectionModel().getSelectedItem();
-			Operator op = stagingOperatorChoice.getSelectionModel().getSelectedItem();
-			if (auxOpsForStaging.size() == 0) {
-				auxOpsForStaging = null;
-			}
-
-			if (atomicCheck.isSelected() == false) {
-				stagedProposition = new CompoundProposition(firstAtom, 
-						secondAtom, 
-						op, 
-						auxOpsForStaging);
-			}else {
-				stagedProposition = new AtomicProposition(auxOpsForStaging, variable);
-				
-			}
-			stagedProposition = stagedProposition.copy();
-			stagedPropField.setText(stagedProposition.toString());
-			
-			auxOpsForStaging = new ArrayList<AuxillaryOperator>();
-			auxOpsString = "";
-			auxOpsStagingTextField.clear();
-			
-			stagingAuxOpsChoice.setDisable(true);
-			stagingAddAuxOp.setDisable(true);
-			atomicCheck.setDisable(true);
-			firstOperandChoice.setDisable(true);
-			secondOperandChoice.setDisable(true);
-			stagingOperatorChoice.setDisable(true);
-			addPropToStaging.setDisable(true);
-			
-			if (rootProposition != null) {
-				chainWithOperatorChoice.setDisable(false);
-				chainWithOperandChoice.setDisable(false);
-				chainWithAuxOpsChoice.setDisable(false);
-				chainingAddAuxOp.setDisable(false);
-			}
-			
-			addPropToChain.setDisable(false);
+			return true;
 		}
-		
-		
-		
-		
-		
-		
-
-
 	}
 	
-	public void addPropToChain() {
-		if (chainWithOperatorChoice.getSelectionModel().isEmpty() & rootProposition != null) {
-			WarningModal warning = new WarningModal("Please choose an operator");
-		}else {
-			if (auxOpsForChaining.size() == 0) {
-				auxOpsForChaining = null;
-			}
-			if (rootProposition != null) {
-				if (chainWithOperandChoice.getSelectionModel().getSelectedItem().equals("First operand")) {
-					rootProposition = new CompoundProposition(stagedProposition, 
-							rootProposition, 
-							chainWithOperatorChoice.getSelectionModel().getSelectedItem(), 
-							auxOpsForChaining);
-				}else if (chainWithOperandChoice.getSelectionModel().getSelectedItem().equals("Second operand")) {
-					rootProposition = new CompoundProposition(rootProposition, 
-							stagedProposition, 
-							chainWithOperatorChoice.getSelectionModel().getSelectedItem(), 
-							auxOpsForChaining);
+	public void addPropToLists() {
+		if (isValidProposition()) {
+			
+			Proposition firstOperand = firstOperandChoice.getSelectionModel().getSelectedItem();
+			Proposition secondOperand = secondOperandChoice.getSelectionModel().getSelectedItem();
+			Operator op = operatorChoice.getSelectionModel().getSelectedItem();
+			AtomicProposition atomicToAdd = null;
+			CompoundProposition compoundToAdd = null;
+			
+			if (singlePropCheck.isSelected()) {
+				if (firstOperand instanceof AtomicProposition) {
+					atomicToAdd = (AtomicProposition) firstOperand.copy();
+					atomicToAdd.setAuxOps(firstAuxOps); // PROBABLY WANT TO ADD TO AUXOPS RATHER THAN OVERIDE !!
+				}else {
+					compoundToAdd = (CompoundProposition) firstOperand.copy();
+					compoundToAdd.setAuxOps(firstAuxOps);
 				}
 				
 			}else {
-				rootProposition = stagedProposition;
-			}
-			rootProposition = rootProposition.copy();
-			
-			currentChainField.setText(rootProposition.toString());
-			
-			
-			stagingAuxOpsChoice.setDisable(false);
-			
-			stagingAddAuxOp.setDisable(false);
-			atomicCheck.setDisable(false);
-			firstOperandChoice.setDisable(false);
-			if (atomicCheck.isSelected() == false) {
-				secondOperandChoice.setDisable(false);
-				stagingOperatorChoice.setDisable(false);
+
+				compoundToAdd = new CompoundProposition(firstOperand, secondOperand, op, null);
 			}
 			
-			addPropToStaging.setDisable(false);
 			
-			completeProp.setDisable(false);
-			addPropToChain.setDisable(true);
-			chainWithOperatorChoice.setDisable(true);
-			chainWithOperandChoice.setDisable(true);
-			chainWithAuxOpsChoice.setDisable(true);
+			if (atomicToAdd != null) {
+				firstPropositionList.add(atomicToAdd.copy());
+				secondPropositionList.add(atomicToAdd.copy());
+				rootProposition = atomicToAdd.copy();
+			}else if (compoundToAdd != null) {
+				firstPropositionList.add(compoundToAdd.copy());
+				secondPropositionList.add(compoundToAdd.copy());
+				rootProposition = compoundToAdd.copy();
+			}else {
+				System.out.println("Something broke");
+			}
 			
-			stagedPropField.clear();
-			auxOpsForChaining = new ArrayList<AuxillaryOperator>();
-			auxOpsString = "";
-			auxOpsChainingTextField.clear();
+			firstOperandChoice.getItems().clear();
+			secondOperandChoice.getItems().clear();
+			
+			firstOperandChoice.getItems().addAll(firstPropositionList);
+			secondOperandChoice.getItems().addAll(secondPropositionList);
+		}else {
+			WarningModal warning = new WarningModal("Please choose a valid proposition");
 		}
+		
+		
+			
+		
 		
 	}
 	
@@ -508,16 +286,43 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 		window.close();
 	}
 	
-	public void clearAllPropositions() {
-		stagedProposition = null;
-		rootProposition = null;
-		auxOpsForStaging = new ArrayList<AuxillaryOperator>();
-		auxOpsForChaining = new ArrayList<AuxillaryOperator>();
-		stagedPropField.clear();
-		currentChainField.clear();
-		chainWithOperatorChoice.setDisable(true);
-		chainWithOperandChoice.setDisable(true);
-		completeProp.setDisable(true);
+	public void initDefaults() {
+		firstPropositionList = new ArrayList<Proposition>(Arrays.asList(new AtomicProposition(null, "p"), 
+				new AtomicProposition(null, "q"), 
+				new AtomicProposition(null, "r"), 
+				new AtomicProposition(null, "a"), 
+				new AtomicProposition(null, "b"), 
+				new AtomicProposition(null, "c")
+				));
+		
+		secondPropositionList = new ArrayList<Proposition>(Arrays.asList(new AtomicProposition(null, "p"), 
+				new AtomicProposition(null, "q"), 
+				new AtomicProposition(null, "r"), 
+				new AtomicProposition(null, "a"), 
+				new AtomicProposition(null, "b"), 
+				new AtomicProposition(null, "c")
+				));
+		
+		firstAuxOps = null;
+		secondAuxOps = null;
+		
+		firstAuxOpsStr = "";
+		secondAuxOpsStr = "";
+		currentPropositionStr = "";
+	}
+	
+	public ArrayList<AuxillaryOperator> addAuxOps(){
+		WindowController controller = new WindowController();
+		AuxOpBuilder auxOpBuilder = new AuxOpBuilder(logicType, controller);
+		ArrayList<AuxillaryOperator> returnedAuxOps = controller.getStoredAuxOps();
+		return returnedAuxOps;
+	}
+	
+	public String buildAuxOpStr(ArrayList<AuxillaryOperator> auxOps, String str) {
+		for (AuxillaryOperator auxOp : auxOps) {
+			str = auxOp + str;
+		}
+		return str;
 	}
 	
 	@Override

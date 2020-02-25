@@ -25,14 +25,10 @@ public class Proposition {
 	public Proposition(String type, ArrayList<AuxillaryOperator> auxOps) {
 		this.id = UUID.randomUUID();
 		this.type = type;
-		if (auxOps != null) {
-			this.auxOps = auxOps;
-		}else {
-			this.auxOps = new ArrayList<AuxillaryOperator>(Arrays.asList(new AuxillaryOperator(AuxillaryOperatorType.NONE)));
-		}
-		
+		this.auxOps = auxOps;
 		this.isExpanded = false;
 		this.priority = -1;
+		checkAuxOpsNonEmpty();
 		
 	}
 	
@@ -63,6 +59,7 @@ public class Proposition {
 	}
 	public void setAuxOps(ArrayList<AuxillaryOperator> auxOps) {
 		this.auxOps = auxOps;
+		checkAuxOpsNonEmpty();
 	}
 	public void setIsExpanded(boolean isExpanded) {
 		this.isExpanded = isExpanded;
@@ -149,9 +146,14 @@ public class Proposition {
 	}
 	
 	private void checkAuxOpsNonEmpty() {
-		if (auxOps.size() == 0) {
+		if (auxOps != null) {
+			if (auxOps.size() == 0) {
+				this.auxOps = new ArrayList<AuxillaryOperator>(Arrays.asList(new AuxillaryOperator(AuxillaryOperatorType.NONE)));
+			}
+		}else {
 			this.auxOps = new ArrayList<AuxillaryOperator>(Arrays.asList(new AuxillaryOperator(AuxillaryOperatorType.NONE)));
 		}
+		
 		
 	}
 	
