@@ -2,33 +2,33 @@ import enums.OperatorType;
 
 public class Operator {
 	
-	private OperatorType operator;
+	private OperatorType operatorType;
 	
 	public Operator() {
 		
 	}
 	
 	public Operator (OperatorType operator) {
-		this.operator = operator;
+		this.operatorType = operator;
 	}
 	
-	public OperatorType getOperator() {
-		return this.operator;
+	public OperatorType getOperatorType() {
+		return this.operatorType;
 	}
 	
-	public void setOperator(OperatorType type) {
-		this.operator = type;
+	public void setOperatorType(OperatorType type) {
+		this.operatorType = type;
 	}
 	
 	@Override
 	public String toString() {
-		if (operator == OperatorType.OR) {
+		if (operatorType == OperatorType.OR) {
 			return "V";
-		}else if (operator == OperatorType.AND) {
+		}else if (operatorType == OperatorType.AND) {
 			return "&";
-		}else if (operator == OperatorType.IF) {
+		}else if (operatorType == OperatorType.IF) {
 			return "\u2283";
-		}else if (operator == OperatorType.EQUALS) {
+		}else if (operatorType == OperatorType.EQUALS) {
 			return "=";
 		}else {
 			return "";
@@ -37,7 +37,7 @@ public class Operator {
 	}
 	
 	public Operator copy() {
-		Operator copiedOperator = new Operator(operator);
+		Operator copiedOperator = new Operator(operatorType);
 		System.out.println("original op: " + this.hashCode());
 		System.out.println("copied op: " + copiedOperator.hashCode());
 		return copiedOperator;

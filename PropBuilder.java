@@ -34,26 +34,28 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 	
 	private Stage window;
 	private Scene scene;
-	private GridPane grid;
+	private GridPane grid, initialPropGrid;
 	private VBox logicTypeVBox;
-	private String auxOpsString, negationSymbol, possibilitySymbol, necessitySymbol, universalSymbol, existentialSymbol;
-	private HBox chainWithRow;
+	private String auxOpsString;
+	private HBox chainWithRow, completionButtonsRow;
 	private VBox operandRadioButtons;
 	//private StackPane leftLabelStack, rightLabelStack, operatorLabelStack, auxOpsLabelStack, leftOperandChoiceStack, rightOperandChoiceStack, operatorChoiceStack;
-	private Label logicTypeLabel, atomicLabel, firstOperandLabel, rightOperandLabel, operatorLabel, auxOpsLabel, stagingLabel, chainWithOperatorLabel, asLabel, currentChainLabel;
+	private Label logicTypeLabel, initialPropositionLabel, atomicLabel, firstOperandLabel, rightOperandLabel, operatorLabel, 
+		auxOpsLabel, usingAuxOpsLabel, stagingLabel, chainWithOperatorLabel, asLabel, currentChainLabel;
 	private ComboBox<AtomicProposition> firstOperandChoice, secondOperandChoice; 
 	private ComboBox<Operator> stagingOperatorChoice, chainWithOperatorChoice;
-	private ComboBox<String> auxOpsChoice, chainWithOperandChoice;
+	private ComboBox<String> chainWithOperandChoice;
+	private ComboBox<AuxillaryOperator> stagingAuxOpsChoice, chainWithAuxOpsChoice;
 	private CheckBox atomicCheck;
-	private TextField auxOpsChainField, stagedPropField, currentChainField;
-	private Button addAuxOp, addPropToStaging, addPropToChain, completeProp, clearAll;
+	private TextField auxOpsStagingTextField, auxOpsChainingTextField, stagedPropField, currentChainField;
+	private Button stagingAddAuxOp, chainingAddAuxOp, addPropToStaging, addPropToChain, completeProp, clearAll;
 	private RadioButton asFirstOperandCheck, asSecondOperandCheck;
 	private ToggleGroup operandToggleGroup, logicTypeGroup;
 	private LogicType logicType;
 	private WindowController windowController;
 	private Proposition rootProposition, stagedProposition;
 	private ArrayList<AtomicProposition> propositionList;
-	private ArrayList<AuxillaryOperator> auxOps;
+	private ArrayList<AuxillaryOperator> auxOpsForStaging, auxOpsForChaining;
 	
 	
 	public PropBuilder(LogicType chosenType, WindowController controller) {
@@ -61,16 +63,19 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 		windowController = controller;
 		
 		
-		propositionList = new ArrayList<AtomicProposition>(Arrays.asList(new AtomicProposition(new ArrayList<AuxillaryOperator>(), "p"), 
-				new AtomicProposition(new ArrayList<AuxillaryOperator>(), "q"), 
-				new AtomicProposition(new ArrayList<AuxillaryOperator>(), "r"), 
-				new AtomicProposition(new ArrayList<AuxillaryOperator>(), "a"), 
-				new AtomicProposition(new ArrayList<AuxillaryOperator>(), "b"), 
-				new AtomicProposition(new ArrayList<AuxillaryOperator>(), "c")
+		propositionList = new ArrayList<AtomicProposition>(Arrays.asList(new AtomicProposition(null, "p"), 
+				new AtomicProposition(null, "q"), 
+				new AtomicProposition(null, "r"), 
+				new AtomicProposition(null, "a"), 
+				new AtomicProposition(null, "b"), 
+				new AtomicProposition(null, "c")
 				));
 				
 		//propositionList = new ArrayList<>(Arrays.asList("p", "q", "r", "a", "b", "c"));
-		auxOps = new ArrayList<AuxillaryOperator>();
+		auxOpsForStaging = new ArrayList<AuxillaryOperator>();
+		auxOpsForChaining = new ArrayList<AuxillaryOperator>();
+		
+		auxOpsString = "";
 		
 		window = new Stage();
 		window.setTitle("Proposition Builder");
@@ -78,19 +83,11 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 		grid = new GridPane();
 		grid.setVgap(20);
 		grid.setHgap(20);
-		grid.setPadding(new Insets(10, 10, 10, 10));
+		grid.setPadding(new Insets(20, 20, 30, 20));
 		//grid.setGridLinesVisible(true);
 		
 		
-		
-		auxOpsString = "";
-		negationSymbol = "~";
-		possibilitySymbol = "\u25C7";
-		necessitySymbol = "\u2610";
-		universalSymbol = "\u2200";
-		existentialSymbol = "\u2203";
-		
-		
+	
 		/*
 		logicTypeLabel = new Label("Select logic type");
 		GridPane.setConstraints(logicTypeLabel, 0, 0);
@@ -127,7 +124,10 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 		
 		// ====================================== LABELS
 		
-		
+		initialPropositionLabel = new Label("Initial proposition");
+		initialPropositionLabel.setAlignment(Pos.CENTER);
+		initialPropositionLabel.setPrefWidth(130);
+		GridPane.setConstraints(initialPropositionLabel, 0, 0, 1, 1, HPos.CENTER, VPos.CENTER);
 		
 		auxOpsLabel = new Label("Auxillary operator");
 		auxOpsLabel.setAlignment(Pos.CENTER);
@@ -156,7 +156,7 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 		
 		stagingLabel = new Label("Staged proposition");
 		stagingLabel.setAlignment(Pos.CENTER);
-		GridPane.setConstraints(stagingLabel, 0, 3, 8, 1, HPos.CENTER, VPos.CENTER);
+		GridPane.setConstraints(stagingLabel, 0, 4, 1, 1, HPos.CENTER, VPos.CENTER);
 		
 		chainWithOperatorLabel = new Label("Chain with operator");
 		chainWithOperatorLabel.setAlignment(Pos.CENTER);
@@ -166,7 +166,10 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 		
 		currentChainLabel = new Label("Current chain");
 		currentChainLabel.setAlignment(Pos.CENTER);
-		GridPane.setConstraints(currentChainLabel, 0, 5, 8, 1, HPos.CENTER, VPos.CENTER);
+		GridPane.setConstraints(currentChainLabel, 0, 8, 1, 1, HPos.CENTER, VPos.CENTER);
+		
+		usingAuxOpsLabel = new Label("Using auxillary operators");
+		usingAuxOpsLabel.setAlignment(Pos.CENTER);
 		
 		// =============== RADIO BUTTONS
 		
@@ -202,24 +205,30 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 		
 		// ============== COMBOBOX ITEMS
 		
-		ArrayList<String> modalOps = new ArrayList<String>(Arrays.asList("POSSIBILITY", "NECESSITY"));
-		ArrayList<String> predicateOps = new ArrayList<String>(Arrays.asList("UNIVERSAL", "EXISTENTIAL"));
-		String negationOp = "NEGATION";
+		ArrayList<AuxillaryOperator> modalOps = new ArrayList<AuxillaryOperator>(Arrays.asList(new AuxillaryOperator(AuxillaryOperatorType.POSSIBLE), 
+				new AuxillaryOperator(AuxillaryOperatorType.NECESSARY),
+				new AuxillaryOperator(AuxillaryOperatorType.NOTPOSSIBLE),
+				new AuxillaryOperator(AuxillaryOperatorType.NOTNECESSARY)));
+		ArrayList<AuxillaryOperator> predicateOps = new ArrayList<AuxillaryOperator>(Arrays.asList(new AuxillaryOperator(AuxillaryOperatorType.UNIVERSAL), 
+				new AuxillaryOperator(AuxillaryOperatorType.EXISTENTIAL), 
+				new AuxillaryOperator(AuxillaryOperatorType.NOTUNIVERSAL), 
+				new AuxillaryOperator(AuxillaryOperatorType.NOTEXISTENTIAL)));
+		AuxillaryOperator negationOp = new AuxillaryOperator(AuxillaryOperatorType.NEGATION);
 		
 		// =============== COMBOBOXES
 		
-		auxOpsChoice = new ComboBox<String>();
-		auxOpsChoice.getItems().addAll(negationOp);
+		stagingAuxOpsChoice = new ComboBox<AuxillaryOperator>();
+		stagingAuxOpsChoice.getItems().addAll(negationOp);
 		if (logicType == LogicType.CLASSICAL) {
 			
 		}else if (logicType == LogicType.PREDICATE) {
-			auxOpsChoice.getItems().addAll(predicateOps);
+			stagingAuxOpsChoice.getItems().addAll(predicateOps);
 		}else if (logicType == LogicType.MODAL) {
-			auxOpsChoice.getItems().addAll(modalOps);
+			stagingAuxOpsChoice.getItems().addAll(modalOps);
 		}
-		GridPane.setConstraints(auxOpsChoice, 0, 1, 1, 1, HPos.CENTER, VPos.CENTER);
+		GridPane.setConstraints(stagingAuxOpsChoice, 0, 1, 1, 1, HPos.CENTER, VPos.CENTER);
 		
-
+		
 		firstOperandChoice = new ComboBox<AtomicProposition>();
 		firstOperandChoice.getItems().addAll(propositionList);
 		GridPane.setConstraints(firstOperandChoice, 4, 1, 1, 1, HPos.CENTER, VPos.CENTER);
@@ -246,29 +255,48 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 		chainWithOperandChoice.getItems().addAll("First operand", "Second operand");
 		chainWithOperandChoice.setDisable(true);
 		
+		chainWithAuxOpsChoice = new ComboBox<AuxillaryOperator>();
+		chainWithAuxOpsChoice.getItems().addAll(negationOp);
+		if (logicType == LogicType.CLASSICAL) {
+			
+		}else if (logicType == LogicType.PREDICATE) {
+			chainWithAuxOpsChoice.getItems().addAll(predicateOps);
+		}else if (logicType == LogicType.MODAL) {
+			chainWithAuxOpsChoice.getItems().addAll(modalOps);
+		}
+		chainWithAuxOpsChoice.setDisable(true);
+		
 		
 		// ========== BUTTONS
 		
-		addAuxOp = new Button("+");
-		addAuxOp.setOnAction(e -> {
-			addAuxOp();
+		stagingAddAuxOp = new Button("+");
+		stagingAddAuxOp.setOnAction(e -> {
+			addAuxOp(stagingAuxOpsChoice, auxOpsForStaging, auxOpsStagingTextField);
 		});
-		GridPane.setConstraints(addAuxOp, 1, 1);
+		GridPane.setConstraints(stagingAddAuxOp, 1, 1);
 		
-		addPropToStaging = new Button("Add proposition to staging");
+
+		chainingAddAuxOp = new Button("+");
+		chainingAddAuxOp.setOnAction(e -> {
+			addAuxOp(chainWithAuxOpsChoice, auxOpsForChaining, auxOpsChainingTextField);
+		});
+		chainingAddAuxOp.setDisable(true);
+
+		
+		addPropToStaging = new Button("Add initial proposition to staging");
 		addPropToStaging.setPrefWidth(250);
 		addPropToStaging.setOnAction(e -> {
 			addNewPropToStaging();
 		});
 		GridPane.setConstraints(addPropToStaging, 7, 1, 1, 1, HPos.CENTER, VPos.CENTER);
 		
-		addPropToChain = new Button("Add proposition to chain");
+		addPropToChain = new Button("Add staged proposition to chain");
 		addPropToChain.setPrefWidth(250);
 		addPropToChain.setDisable(true);
 		addPropToChain.setOnAction(e -> {
 			addPropToChain();
 		});
-		GridPane.setConstraints(addPropToChain, 7, 4, 1, 1, HPos.CENTER, VPos.CENTER);
+		GridPane.setConstraints(addPropToChain, 7, 5, 1, 1, HPos.CENTER, VPos.CENTER);
 		
 		completeProp = new Button("Complete proposition");
 		completeProp.setPrefWidth(250);
@@ -276,86 +304,88 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 		completeProp.setOnAction(e -> {
 			completeProposition();
 		});
-		GridPane.setConstraints(completeProp, 7, 6, 1, 1, HPos.CENTER, VPos.CENTER);
+		//GridPane.setConstraints(completeProp, 7, 8, 1, 1, HPos.CENTER, VPos.CENTER);
 		
 		clearAll = new Button("Clear all");
-		clearAll.setPrefWidth(200);
+		clearAll.setPrefWidth(250);
 		clearAll.setOnAction(e -> {
 			clearAllPropositions();
 		});
-		GridPane.setConstraints(clearAll, 0, 7, 8, 1, HPos.CENTER, VPos.CENTER);
+		//GridPane.setConstraints(clearAll, 0, 9, 8, 1, HPos.CENTER, VPos.CENTER);
 		
 		
 		// ================ TEXTFIELDS
 		
-		auxOpsChainField = new TextField();
-		auxOpsChainField.setEditable(false);
-		GridPane.setConstraints(auxOpsChainField, 2, 1);
+		auxOpsStagingTextField = new TextField();
+		auxOpsStagingTextField.setEditable(false);
+		GridPane.setConstraints(auxOpsStagingTextField, 2, 1);
+		
+		auxOpsChainingTextField = new TextField();
+		auxOpsChainingTextField.setEditable(false);
+
 		
 		stagedPropField = new TextField();
 		stagedPropField.setEditable(false);
-		GridPane.setConstraints(stagedPropField, 0, 4, 7, 1);
+		GridPane.setConstraints(stagedPropField, 0, 5, 1, 1);
 		
 		currentChainField = new TextField();
 		currentChainField.setEditable(false);
-		GridPane.setConstraints(currentChainField, 0, 6, 7, 1);
+		GridPane.setConstraints(currentChainField, 0, 9, 1, 1);
 		
 		
 		// ============ SEPARATORS
 		
-		Separator sep = new Separator(Orientation.HORIZONTAL);
-		GridPane.setConstraints(sep, 0, 2, 8, 1);
+		Separator sep1 = new Separator(Orientation.HORIZONTAL);
+		GridPane.setConstraints(sep1, 0, 3, 1, 1, HPos.CENTER, VPos.CENTER, Priority.ALWAYS, Priority.ALWAYS, new Insets(20, 0, 20, 0));
 		
-		// ================== H and V BOXES
+		Separator sep2 = new Separator(Orientation.HORIZONTAL);
+		GridPane.setConstraints(sep2, 0, 7, 1, 1, HPos.CENTER, VPos.CENTER, Priority.ALWAYS, Priority.ALWAYS, new Insets(20, 0, 20, 0));
+		
+		// ================== H and V BOXES, GRIDS
 		
 		operandRadioButtons = new VBox(10);
 		operandRadioButtons.setAlignment(Pos.CENTER_LEFT);
 		operandRadioButtons.getChildren().addAll(asFirstOperandCheck, asSecondOperandCheck);
 		//GridPane.setConstraints(operandRadioButtons, 0, 7, 7, 1, HPos.CENTER, VPos.CENTER);
 		
+		initialPropGrid = new GridPane();
+		initialPropGrid.setVgap(10);
+		initialPropGrid.setHgap(10);
+		initialPropGrid.getChildren().addAll(auxOpsLabel, atomicLabel, firstOperandLabel, rightOperandLabel, operatorLabel, 
+				stagingAuxOpsChoice, firstOperandChoice, secondOperandChoice, auxOpsStagingTextField, stagingAddAuxOp, 
+				stagingOperatorChoice, stackForAtomicCheck, addPropToStaging);
+		GridPane.setConstraints(initialPropGrid, 0, 1);
+		
 		chainWithRow = new HBox(10);
 		chainWithRow.setAlignment(Pos.CENTER);
-		chainWithRow.getChildren().addAll(chainWithOperatorLabel, chainWithOperatorChoice, asLabel, chainWithOperandChoice);
-		GridPane.setConstraints(chainWithRow, 7, 3);
+		chainWithRow.getChildren().addAll(usingAuxOpsLabel, chainWithAuxOpsChoice, chainingAddAuxOp, auxOpsChainingTextField, chainWithOperatorLabel, 
+				chainWithOperatorChoice, asLabel, chainWithOperandChoice, addPropToChain);
+		GridPane.setConstraints(chainWithRow, 0, 6);
+		
+		completionButtonsRow = new HBox(10);
+		completionButtonsRow.setAlignment(Pos.CENTER); 
+		completionButtonsRow.getChildren().addAll(clearAll, completeProp);
+		GridPane.setConstraints(completionButtonsRow, 0, 10, 1, 1, HPos.CENTER, VPos.CENTER);
 		
 		// ============ ADD TO GRID
 		
-		grid.getChildren().addAll(auxOpsLabel, atomicLabel, firstOperandLabel, rightOperandLabel, operatorLabel, stagingLabel, currentChainLabel, 
-				auxOpsChoice, firstOperandChoice, secondOperandChoice, stagingOperatorChoice,
-				auxOpsChainField, stagedPropField, currentChainField, 
-				addAuxOp, addPropToStaging, addPropToChain, completeProp, clearAll, 
-				sep, chainWithRow, stackForAtomicCheck);
+		grid.getChildren().addAll(initialPropositionLabel, initialPropGrid, stagingLabel, currentChainLabel, 
+				stagedPropField, currentChainField, completionButtonsRow,
+				sep1, sep2, chainWithRow);
 		
 		scene = new Scene(grid);
 		window.setScene(scene);
 		window.showAndWait();
 	}
 	
-	public void addAuxOp() {
-		if (auxOpsChoice.getSelectionModel().isEmpty()) {
+	public void addAuxOp(ComboBox<AuxillaryOperator> choice, ArrayList<AuxillaryOperator> auxOpList, TextField auxOpField) {
+		if (choice.getSelectionModel().isEmpty()) {
 			WarningModal warning = new WarningModal("Please choose an auxillary operator");
 		}else {
-			AuxillaryOperator auxOp = new AuxillaryOperator();
-			if (auxOpsChoice.getSelectionModel().getSelectedItem().equals("NEGATION")) {
-				auxOpsString = negationSymbol + auxOpsString;
-				auxOp.setAuxOp(AuxillaryOperatorType.NEGATION); 
-			}else if (auxOpsChoice.getSelectionModel().getSelectedItem().equals("POSSIBILITY")) {
-				auxOpsString = possibilitySymbol + " " + auxOpsString;
-				auxOp.setAuxOp(AuxillaryOperatorType.POSSIBILITY);
-			}else if (auxOpsChoice.getSelectionModel().getSelectedItem().equals("NECESSITY")) {
-				auxOpsString = necessitySymbol + " " + auxOpsString;
-				auxOp.setAuxOp(AuxillaryOperatorType.NECESSITY);
-			}else if (auxOpsChoice.getSelectionModel().getSelectedItem().equals("UNIVERSAL")){
-				auxOpsString = universalSymbol + " " + auxOpsString;
-				auxOp.setAuxOp(AuxillaryOperatorType.UNIVERSAL);
-			}else if (auxOpsChoice.getSelectionModel().getSelectedItem().equals("EXISTENTIAL")) {
-				auxOpsString = existentialSymbol + " " + auxOpsString;
-				auxOp.setAuxOp(AuxillaryOperatorType.EXISTENTIAL);
-			}else {
-
-			}
-			auxOps.add(0, auxOp);
-			auxOpsChainField.setText(auxOpsString);
+			AuxillaryOperator auxOp = choice.getSelectionModel().getSelectedItem().copy();
+			auxOpsString = auxOp.toString() + auxOpsString;
+			auxOpList.add(0, auxOp);
+			auxOpField.setText(auxOpsString);
 		}
 		
 	}
@@ -372,23 +402,28 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 			AtomicProposition firstAtom = firstOperandChoice.getSelectionModel().getSelectedItem();
 			AtomicProposition secondAtom = secondOperandChoice.getSelectionModel().getSelectedItem();
 			Operator op = stagingOperatorChoice.getSelectionModel().getSelectedItem();
-			
+			if (auxOpsForStaging.size() == 0) {
+				auxOpsForStaging = null;
+			}
+
 			if (atomicCheck.isSelected() == false) {
 				stagedProposition = new CompoundProposition(firstAtom, 
 						secondAtom, 
 						op, 
-						auxOps);
+						auxOpsForStaging);
 			}else {
-				stagedProposition = new AtomicProposition(auxOps, variable);
+				stagedProposition = new AtomicProposition(auxOpsForStaging, variable);
 				
 			}
 			stagedProposition = stagedProposition.copy();
 			stagedPropField.setText(stagedProposition.toString());
 			
-			auxOps = new ArrayList<AuxillaryOperator>();
+			auxOpsForStaging = new ArrayList<AuxillaryOperator>();
+			auxOpsString = "";
+			auxOpsStagingTextField.clear();
 			
-			auxOpsChoice.setDisable(true);
-			addAuxOp.setDisable(true);
+			stagingAuxOpsChoice.setDisable(true);
+			stagingAddAuxOp.setDisable(true);
 			atomicCheck.setDisable(true);
 			firstOperandChoice.setDisable(true);
 			secondOperandChoice.setDisable(true);
@@ -398,6 +433,8 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 			if (rootProposition != null) {
 				chainWithOperatorChoice.setDisable(false);
 				chainWithOperandChoice.setDisable(false);
+				chainWithAuxOpsChoice.setDisable(false);
+				chainingAddAuxOp.setDisable(false);
 			}
 			
 			addPropToChain.setDisable(false);
@@ -416,17 +453,20 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 		if (chainWithOperatorChoice.getSelectionModel().isEmpty() & rootProposition != null) {
 			WarningModal warning = new WarningModal("Please choose an operator");
 		}else {
+			if (auxOpsForChaining.size() == 0) {
+				auxOpsForChaining = null;
+			}
 			if (rootProposition != null) {
 				if (chainWithOperandChoice.getSelectionModel().getSelectedItem().equals("First operand")) {
 					rootProposition = new CompoundProposition(stagedProposition, 
 							rootProposition, 
 							chainWithOperatorChoice.getSelectionModel().getSelectedItem(), 
-							auxOps);
+							auxOpsForChaining);
 				}else if (chainWithOperandChoice.getSelectionModel().getSelectedItem().equals("Second operand")) {
 					rootProposition = new CompoundProposition(rootProposition, 
 							stagedProposition, 
 							chainWithOperatorChoice.getSelectionModel().getSelectedItem(), 
-							auxOps);
+							auxOpsForChaining);
 				}
 				
 			}else {
@@ -437,8 +477,9 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 			currentChainField.setText(rootProposition.toString());
 			
 			
-			auxOpsChoice.setDisable(false);
-			addAuxOp.setDisable(false);
+			stagingAuxOpsChoice.setDisable(false);
+			
+			stagingAddAuxOp.setDisable(false);
 			atomicCheck.setDisable(false);
 			firstOperandChoice.setDisable(false);
 			if (atomicCheck.isSelected() == false) {
@@ -452,10 +493,12 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 			addPropToChain.setDisable(true);
 			chainWithOperatorChoice.setDisable(true);
 			chainWithOperandChoice.setDisable(true);
+			chainWithAuxOpsChoice.setDisable(true);
 			
 			stagedPropField.clear();
-			auxOps = new ArrayList<AuxillaryOperator>();
-			auxOpsChainField.clear();
+			auxOpsForChaining = new ArrayList<AuxillaryOperator>();
+			auxOpsString = "";
+			auxOpsChainingTextField.clear();
 		}
 		
 	}
@@ -466,9 +509,10 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 	}
 	
 	public void clearAllPropositions() {
-		stagedProposition = new CompoundProposition();
-		rootProposition = new CompoundProposition();
-		auxOps = new ArrayList<AuxillaryOperator>();
+		stagedProposition = null;
+		rootProposition = null;
+		auxOpsForStaging = new ArrayList<AuxillaryOperator>();
+		auxOpsForChaining = new ArrayList<AuxillaryOperator>();
 		stagedPropField.clear();
 		currentChainField.clear();
 		chainWithOperatorChoice.setDisable(true);

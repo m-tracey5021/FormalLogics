@@ -1,33 +1,38 @@
 
 import java.util.*;
-import java.util.Date;
+import com.google.gson.*;
+
+import com.fasterxml.*;
+import com.fasterxml.jackson.*;
+import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import enums.LogicType;
 
-import java.sql.*;
-import java.time.LocalDate;
-import java.time.Month;
-import java.time.format.DateTimeFormatter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
-import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
+import javafx.event.*;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.input.ClipboardContent;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.TransferMode;
 import javafx.scene.layout.*;
-import javafx.scene.paint.*;
-import javafx.scene.shape.Line;
 import javafx.geometry.*;
 
 public class LogicEvaluatorWindow {
@@ -37,17 +42,23 @@ public class LogicEvaluatorWindow {
 	private GridPane grid;
 	private Label logicTypeLabel, modelLabel;
 	private VBox logicTypeVBox, lockButtonsVBox, propositionList;
-	private HBox selectionHBox;
+	private HBox selectionHBox, importOrCreatePropositions, saveOrClearPropositions;
 	private ScrollPane scroll;
 	private Pane modelPane;
+	private StackPane modelPaneCenter;
 	private RadioButton classicalRb, predicateRb, modalRb;
 	private ToggleGroup logicTypeGroup;
-	private Button lockLogicType, unlockLogicType, createNewProp, generateModel, resetModel;
+	private Button lockLogicType, unlockLogicType, createNewProp, importPropositions, savePropositions, clearPropositions, generateModel, resetModel;
 	private ArrayList<Proposition> propositions;
 	private ArrayList<PropositionContainer> containers; // put the propositions in here so that can sort out Ids
 	private LogicType logicType;
+	private WindowController controller;
+
+
 	
 	public LogicEvaluatorWindow() {
+		
+		controller = new WindowController();
 		
 		propositions = new ArrayList<Proposition>();
 		
@@ -79,13 +90,14 @@ public class LogicEvaluatorWindow {
 			
 			unlockLogicType.setDisable(false);
 			createNewProp.setDisable(false);
+			importPropositions.setDisable(false);
 			
 		});
 		
 		unlockLogicType = new Button("Unlock selection");
 		unlockLogicType.setPrefWidth(130);
 		unlockLogicType.setOnAction(e -> {
-			WindowController controller = new WindowController();
+
 			ConfirmationModal confirm = new ConfirmationModal("All current propositions will be lost", controller);
 			if (controller.getBoolRet() == true) {
 				lockLogicType.setDisable(false);
@@ -95,7 +107,10 @@ public class LogicEvaluatorWindow {
 				
 				unlockLogicType.setDisable(true);
 				createNewProp.setDisable(true);
+				importPropositions.setDisable(true);
 				generateModel.setDisable(true);
+				savePropositions.setDisable(true);
+				clearPropositions.setDisable(true);
 				
 				propositions = new ArrayList<Proposition>();
 				propositionList.getChildren().clear();
@@ -110,6 +125,7 @@ public class LogicEvaluatorWindow {
 		unlockLogicType.setDisable(true);
 		
 		createNewProp = new Button("Create new proposition");
+		createNewProp.setPrefWidth(180);
 		createNewProp.setOnAction(e -> {
 			WindowController controller = new WindowController();
 			PropBuilder propBuilder = new PropBuilder(logicType, controller);
@@ -121,39 +137,101 @@ public class LogicEvaluatorWindow {
 				Label newPropLabel = new Label(returnedProp.toString());
 				propositionList.getChildren().addAll(newPropLabel);
 				generateModel.setDisable(false);
+				savePropositions.setDisable(false);
+				clearPropositions.setDisable(false);
 			}
 			
 		});
 		createNewProp.setDisable(true);
-		GridPane.setConstraints(createNewProp, 0, 4, 1, 1, HPos.CENTER, VPos.CENTER);
+
+		
+		importPropositions = new Button("Import propositions");
+		importPropositions.setPrefWidth(180);
+		importPropositions.setOnAction(e -> {
+			String jsonImported = importFile();
+			PropositionContainer importedPropsContainer = deserializePropositions(jsonImported);
+			if (importedPropsContainer != null) {
+				LogicType returnedLogicType = importedPropsContainer.getLogicType();
+				if (returnedLogicType != logicType) {
+					ConfirmationModal confirm = new ConfirmationModal("Incompatible logic types, current selection will be overridden", controller);
+					if (controller.getBoolRet() == true) {
+						if (returnedLogicType == LogicType.PREDICATE) {
+							predicateRb.setSelected(true);
+						}else if (returnedLogicType == LogicType.MODAL) {
+							modalRb.setSelected(true);
+						}else {
+							classicalRb.setSelected(true);
+						}
+						addImportedProps(importedPropsContainer);
+
+					}else {
+						
+					}
+				}else {
+					addImportedProps(importedPropsContainer);
+				}
+			}
+			
+			
+		});
+		importPropositions.setDisable(true);
+		
+		savePropositions = new Button("Save propositions");
+		savePropositions.setPrefWidth(180);
+		savePropositions.setOnAction(e -> {
+			String jsonToSave = serializePropositions();
+			saveToFile(jsonToSave);
+			
+		});
+		savePropositions.setDisable(true);
+		
+		
+		clearPropositions = new Button("Clear propositions");
+		clearPropositions.setPrefWidth(180);
+		clearPropositions.setOnAction(e -> {
+			propositions = new ArrayList<Proposition>();
+			propositionList.getChildren().clear();
+			generateModel.setDisable(true);
+			savePropositions.setDisable(true);
+			clearPropositions.setDisable(true);
+		});
+		clearPropositions.setDisable(true);
+
 		
 		generateModel = new Button("Generate model");
 		generateModel.setOnAction(e -> {
-			if (logicType == LogicType.CLASSICAL) {
+			if (logicType == LogicType.MODAL || logicType == LogicType.CLASSICAL) {
 				modelPane.getChildren().clear();
-				TernaryNode rootNode = new TernaryNode(propositions);
-				rootNode.expand();
-				rootNode.setupGeometry(200.0, 50.0, 30.0, 20.0, modelPane);
+				TernaryNode treeStart = setupInitialTree();
+				RootNode rootNode = new RootNode(treeStart);
+				Universe rootUniverse = new Universe(false, false, false, false);
+				World rootWorld = new World(rootUniverse, rootNode);
+				rootWorld.expandWithinUniverse();
+
+				double xPos = 200.0;
+				for(World world : rootUniverse.getWorlds()) {
+					System.out.println(world);
+					world.getRootNode().getTreeStart().setupGeometry(xPos, 50.0, 45.0, 20.0, modelPane);
+					xPos  += 100;
+				}
 				scroll.setContent(modelPane);
 				resetModel.setDisable(false);
-				ArrayList<TernaryNode> emptyNodes = rootNode.initEmptyNodes();
-				ArrayList<Proposition> allProps = rootNode.initAllPropositions();
-				System.out.println(emptyNodes);
-				System.out.println(allProps);
+
+			}else if (logicType == LogicType.PREDICATE) {
+				
 			}
 		});
 		generateModel.setDisable(true);
-		GridPane.setConstraints(generateModel, 0, 7, 1, 1, HPos.CENTER, VPos.CENTER);
+		GridPane.setConstraints(generateModel, 0, 8, 1, 1, HPos.CENTER, VPos.CENTER);
 		
 		resetModel = new Button("Reset model");
 		resetModel.setOnAction(e -> {
 			resetModel.setDisable(true);
 			modelPane = new Pane();
-			modelPane.setPrefSize(400, 400);
 			scroll.setContent(modelPane);
 		});
 		resetModel.setDisable(true);
-		GridPane.setConstraints(resetModel, 1, 7, 1, 1, HPos.CENTER, VPos.CENTER);
+		GridPane.setConstraints(resetModel, 1, 8, 1, 1, HPos.CENTER, VPos.CENTER);
 		
 		// ========== RADIO BUTTONS
 		
@@ -235,23 +313,37 @@ public class LogicEvaluatorWindow {
 		propositionList.getStyleClass().add("");
 		GridPane.setConstraints(propositionList, 0, 5, 1, 1);
 		
+		
+		importOrCreatePropositions = new HBox(20);
+		importOrCreatePropositions.setAlignment(Pos.CENTER);
+		importOrCreatePropositions.getChildren().addAll(importPropositions, createNewProp);
+		GridPane.setConstraints(importOrCreatePropositions, 0, 4, 1, 1, HPos.CENTER, VPos.CENTER);
+		
+		saveOrClearPropositions = new HBox(20);
+		saveOrClearPropositions.setAlignment(Pos.CENTER);
+		saveOrClearPropositions.getChildren().addAll(savePropositions, clearPropositions);
+		GridPane.setConstraints(saveOrClearPropositions, 0, 6, 1, 1, HPos.CENTER, VPos.CENTER);
+		
 		// ========== PANES
 		
 		modelPane = new Pane();
-		modelPane.setPrefSize(400, 400);
+		//modelPane.setPrefSize(400, 400);
 
 		
-		
+		modelPaneCenter = new StackPane();
+		modelPaneCenter.setPrefSize(400, 400);
+		modelPaneCenter.getChildren().add(modelPane);
 		
 		
 		
 		
 		scroll = new ScrollPane();
+		scroll.setPrefSize(400, 400);
 		scroll.setContent(modelPane);
 		scroll.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		scroll.setHbarPolicy(ScrollBarPolicy.ALWAYS);
 		scroll.setPannable(true);
-		GridPane.setConstraints(scroll, 1, 1, 1, 6);
+		GridPane.setConstraints(scroll, 1, 1, 1, 7);
 		
 		// ========== SEPARATORS
 		
@@ -262,7 +354,7 @@ public class LogicEvaluatorWindow {
 		GridPane.setConstraints(selectionSep2, 0, 3, 1, 1);
 		
 		Separator selectionSep3 = new Separator(Orientation.HORIZONTAL);
-		GridPane.setConstraints(selectionSep3, 0, 6, 1, 1, HPos.CENTER, VPos.BOTTOM);
+		GridPane.setConstraints(selectionSep3, 0, 7, 1, 1, HPos.CENTER, VPos.BOTTOM);
 		
 		
 		// ==================================================
@@ -270,14 +362,169 @@ public class LogicEvaluatorWindow {
 
 		grid.getChildren().addAll(logicTypeLabel, modelLabel, 
 				selectionSep1, selectionSep2, selectionSep3,
-				selectionHBox, propositionList, 
-				createNewProp, generateModel, resetModel,  
+				selectionHBox, propositionList, importOrCreatePropositions, saveOrClearPropositions, 
+				generateModel, resetModel,  
 				scroll);
 		
 		scene = new Scene(grid);
 		window.setScene(scene);
 		window.show();
 		
+	}
+	
+	public TernaryNode setupInitialTree() {
+		ArrayList<TernaryNode> initialNodes = new ArrayList<TernaryNode>();
+		TernaryNode nodeToChain = new TernaryNode(propositions.get(0));
+		
+		for (int i = 0; i < propositions.size() - 1; i ++) {
+			nodeToChain.lane(propositions.get(i + 1), false);
+			nodeToChain = nodeToChain.getCenterNode();
+		}
+		
+		return nodeToChain.getRoot();
+	}
+	
+	// ================ FILE IO
+	
+	public String serializePropositions() {
+		//JsonFactory factory = new JsonFactory();
+		ObjectMapper mapper = new ObjectMapper();
+		//ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		PropositionContainer container = new PropositionContainer(logicType, propositions);
+
+		try {
+			//JsonGenerator generator = factory.createGenerator(outputStream, JsonEncoding.UTF8);
+			
+			String propJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(container);
+			
+			/*
+			int propCount = 0;
+			generator.writeStartObject();
+			generator.writeArrayFieldStart("propositions");
+			for (Proposition propToSerialize : propositions) {
+				String propJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(propToSerialize);
+				generator.writeStringField("propsition " + propCount, propJson);
+			}
+			generator.writeEndArray();
+			generator.writeEndObject();
+			generator.close();
+			
+			String outputStr = new String(outputStream.toByteArray());
+			System.out.println(outputStr);
+			return outputStr;
+			
+			*/
+			return propJson;
+		}catch (IOException ex) {
+			ex.printStackTrace();
+			return "error in serialization";
+		}
+		
+		
+	}
+	
+	public PropositionContainer deserializePropositions(String jsonStr) { // WILL NOT WORK WITH RECURSIVE OBJECTS, MAKE YOUR OWN FUNCTION
+		//ArrayList<Proposition> importedProps = new ArrayList<Proposition>();
+		ObjectMapper mapper = new ObjectMapper();
+		PropositionDeserializer propDeserializer = new PropositionDeserializer();
+		
+		PropositionContainer container = null;
+		ArrayList<Proposition> importedProps = new ArrayList<Proposition>();
+		
+		try {
+			JsonNode rootNode = mapper.readTree(jsonStr);
+			String returnedLogicTypeStr = rootNode.get("logicType").toString();
+			String trimmed = returnedLogicTypeStr.substring(1, returnedLogicTypeStr.length() - 1);
+			LogicType returnedLogicType = getValueOfLogicType(trimmed);
+			JsonNode propsNode = rootNode.get("propositions");
+			if (propsNode.isArray()) {
+				ArrayNode propsArr = (ArrayNode) propsNode;
+				for (int i = 0; i < propsArr.size(); i ++) {
+					JsonNode propositionObject = propsArr.get(i);
+					String propositionString = propositionObject.toString();
+					Proposition importedProp = propDeserializer.deserialize(propositionString);
+					importedProps.add(importedProp);
+				}
+			}
+			container = new PropositionContainer(returnedLogicType, importedProps);
+			//importedProps = mapper.readValue(jsonStr, Proposition[].class);
+		}catch (IOException ex) {
+			ex.printStackTrace();
+		}
+		
+		
+		/*
+		PropositionDeserializer propDeserializer = new PropositionDeserializer();
+		Proposition deserializedProp = propDeserializer.deserialize(jsonStr);
+		
+		
+		
+		importedProps.add(deserializedProp);
+		
+		*/
+		return container;
+		
+	}
+	
+	public String importFile() {
+		
+		FileChooser fileChooser = new FileChooser();
+		File file = fileChooser.showOpenDialog(window);
+		if (file != null) {
+			try {
+				String content = new String(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
+				return content;
+			}catch(IOException ex) {
+				ex.printStackTrace();
+				return "";
+			}
+		}else {
+			return "";
+		}
+		
+		
+	}
+	
+	public void saveToFile(String content) {
+		FileChooser fileChooser = new FileChooser();
+		FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("JSON files (*.json)", "*.json");
+        fileChooser.getExtensionFilters().add(extFilter);
+		
+		File file = fileChooser.showSaveDialog(window);
+		
+		if (file != null) {
+			try {
+				FileWriter writer = new FileWriter(file);
+				writer.write(content);
+				writer.close();
+				System.out.println("Wrote to file: " + file.getAbsolutePath());
+			}catch (IOException ex) {
+				ex.printStackTrace();
+			}
+		}
+		
+		
+	}
+	
+	public void addImportedProps(PropositionContainer importedPropsContainer) {
+		propositions = importedPropsContainer.getPropositions();
+		propositionList.getChildren().clear();
+		for (Proposition importedProp : importedPropsContainer.getPropositions()) {
+			propositionList.getChildren().add(new Label(importedProp.toString()));
+		}
+		generateModel.setDisable(false);
+		savePropositions.setDisable(false);
+		clearPropositions.setDisable(false);
+	}
+	
+	public LogicType getValueOfLogicType(String logicTypeStr) {
+		if (logicTypeStr.equals("PREDICATE")) {
+			return LogicType.PREDICATE;
+		}else if (logicTypeStr.equals("MODAL")) {
+			return LogicType.MODAL;
+		}else {
+			return LogicType.CLASSICAL;
+		}
 	}
 	
 }

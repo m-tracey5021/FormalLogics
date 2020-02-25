@@ -1,16 +1,22 @@
 import java.util.ArrayList;
 import java.util.UUID;
 
+import enums.AuxillaryOperatorType;
+
 public class AtomicProposition extends Proposition {
 	private String variableName;
 
 	public AtomicProposition() {
-		super();
+		super("atomic");
+		super.setIsExpanded(true);
 	}
 	
 	public AtomicProposition(ArrayList<AuxillaryOperator> auxOps, String variableName) {
-		super(auxOps);
+		super("atomic", auxOps);
+		super.setIsExpanded(isNotExpandable(auxOps));
+		super.setPriority();
 		this.variableName = variableName;
+		
 	}
 	
 	// ======= GET
@@ -26,6 +32,16 @@ public class AtomicProposition extends Proposition {
 	public void setVariableName(String variableName) {
 		this.variableName = variableName;
 	}
+	
+	public boolean isNotExpandable(ArrayList<AuxillaryOperator> auxOps) {
+		if (auxOps == null) {
+			return true;
+		}else if (auxOps.get(0).getAuxOpType() == AuxillaryOperatorType.NEGATION) {
+			return true;
+		}else {
+			return false;
+		}
+	}
 
 	
 	@Override
@@ -39,19 +55,5 @@ public class AtomicProposition extends Proposition {
 		return auxOpsStr + this.variableName;
 	}
 	
-	
-	/*
-	public AtomicProposition copy() {
-		AtomicProposition copiedProp;
-		
-		ArrayList<AuxillaryOperator> copiedAuxOps = new ArrayList<AuxillaryOperator>();
-		for(AuxillaryOperator auxOp : this.getAuxOps()) {
-			AuxillaryOperator copiedAuxOp = auxOp.copy();
-			copiedAuxOps.add(copiedAuxOp);
-		}
-		
-		copiedProp = new AtomicProposition(copiedAuxOps, variableName);
-		return copiedProp;
-	}
-	*/
+
 }

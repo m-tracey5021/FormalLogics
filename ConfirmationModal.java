@@ -28,6 +28,9 @@ public class ConfirmationModal {
 		
 		warningLabel = new Label(message);
 		
+		
+
+		
 		okButton = new Button("OK");
 		okButton.setPrefWidth(100);
 		okButton.setOnAction(e -> {

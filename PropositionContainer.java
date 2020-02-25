@@ -1,26 +1,27 @@
 import java.util.ArrayList;
 
+import enums.LogicType;
+
 public class PropositionContainer {
-	private Proposition proposition;
-	private ArrayList<CompoundProposition> allConstituentCompoundProps;
-	private ArrayList<AtomicProposition> allConstituentAtomicProps;
-	private ArrayList<Proposition> allConstituentProps;
+	//private Proposition proposition;
+	//private ArrayList<CompoundProposition> allConstituentCompoundProps;
+	//private ArrayList<AtomicProposition> allConstituentAtomicProps;
+	private LogicType logicType;
+	private ArrayList<Proposition> propositions;
 	
-	public PropositionContainer(Proposition prop) {
-		this.proposition = prop;
-		breakdownProp(prop);
+	public PropositionContainer() {
+		
 	}
 	
-	public void breakdownProp(Proposition prop) {
-		allConstituentProps.add(prop);
-		if (prop instanceof CompoundProposition) {
-			breakdownProp(((CompoundProposition)prop).getFirstOperand());
-			breakdownProp(((CompoundProposition)prop).getSecondOperand());
-		}else {
-			return;
-		}
-		
-		
+	public PropositionContainer(LogicType logicType, ArrayList<Proposition> propositions) {
+		this.logicType = logicType;
+		this.propositions = propositions;
+	}
+	public LogicType getLogicType() {
+		return this.logicType;
+	}
+	public ArrayList<Proposition> getPropositions(){
+		return this.propositions;
 	}
 	
 	/*
