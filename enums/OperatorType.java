@@ -1,8 +1,8 @@
 package enums;
 
 public enum OperatorType {
-	OR,
 	AND,
+	OR,
 	IF,
 	EQUALS
 }

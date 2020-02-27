@@ -34,446 +34,610 @@ public class PropBuilder implements EventHandler<ActionEvent> {
 	
 	private Stage window;
 	private Scene scene;
-	private GridPane grid;
+	private GridPane grid, propositionGrid;
 	private VBox logicTypeVBox;
-	private String auxOpsString, negationSymbol, possibilitySymbol, necessitySymbol, universalSymbol, existentialSymbol;
-	private HBox chainWithRow;
-	private VBox operandRadioButtons;
+	private String firstAuxOpsStr, secondAuxOpsStr, currentPropositionStr, placeholderStr;
+	private HBox completionButtonsRow;
+	private VBox layout;
 	//private StackPane leftLabelStack, rightLabelStack, operatorLabelStack, auxOpsLabelStack, leftOperandChoiceStack, rightOperandChoiceStack, operatorChoiceStack;
-	private Label logicTypeLabel, atomicLabel, firstOperandLabel, rightOperandLabel, operatorLabel, auxOpsLabel, stagingLabel, chainWithOperatorLabel, asLabel, currentChainLabel;
-	private ComboBox<AtomicProposition> firstOperandChoice, secondOperandChoice; 
-	private ComboBox<Operator> stagingOperatorChoice, chainWithOperatorChoice;
-	private ComboBox<String> auxOpsChoice, chainWithOperandChoice;
-	private CheckBox atomicCheck;
-	private TextField auxOpsChainField, stagedPropField, currentChainField;
-	private Button addAuxOp, addPropToStaging, addPropToChain, completeProp, clearAll;
-	private RadioButton asFirstOperandCheck, asSecondOperandCheck;
-	private ToggleGroup operandToggleGroup, logicTypeGroup;
+	private Label singlePropLabel, firstOperandLabel, rightOperandLabel, operatorLabel, currentPropositionLabel;
+	private ComboBox<Proposition> firstOperandChoice, secondOperandChoice; 
+	private ComboBox<Operator> operatorChoice;
+	//private ComboBox<String> chainWithOperandChoice;
+	//private ComboBox<AuxillaryOperator> stagingAuxOpsChoice, chainWithAuxOpsChoice;
+	private CheckBox singlePropCheck;
+	private TextField currentPropositionField;
+	private Button addMainAuxOps, addAuxOpToFirst, addAuxOpToSecond, addToPropLists, clearAll, completeProp;
 	private LogicType logicType;
 	private WindowController windowController;
-	private Proposition rootProposition, stagedProposition;
-	private ArrayList<AtomicProposition> propositionList;
-	private ArrayList<AuxillaryOperator> auxOps;
-	
+	private Proposition chosenFirstOperand, chosenSecondOperand, firstOperandForString, secondOperandForString;
+	private Operator chosenOperator;
+	private ArrayList<Proposition> firstPropositionList, secondPropositionList;
+	private ArrayList<AuxillaryOperator> mainAuxOps, firstAuxOps, secondAuxOps;
+	private Tooltip auxOpPopup;
+	private PropComponentString propStr;
 	
 	public PropBuilder(LogicType chosenType, WindowController controller) {
 		logicType = chosenType;
 		windowController = controller;
 		
 		
-		propositionList = new ArrayList<AtomicProposition>(Arrays.asList(new AtomicProposition(new ArrayList<AuxillaryOperator>(), "p"), 
-				new AtomicProposition(new ArrayList<AuxillaryOperator>(), "q"), 
-				new AtomicProposition(new ArrayList<AuxillaryOperator>(), "r"), 
-				new AtomicProposition(new ArrayList<AuxillaryOperator>(), "a"), 
-				new AtomicProposition(new ArrayList<AuxillaryOperator>(), "b"), 
-				new AtomicProposition(new ArrayList<AuxillaryOperator>(), "c")
-				));
-				
-		//propositionList = new ArrayList<>(Arrays.asList("p", "q", "r", "a", "b", "c"));
-		auxOps = new ArrayList<AuxillaryOperator>();
+		initDefaults();
+		
+		
 		
 		window = new Stage();
 		window.setTitle("Proposition Builder");
 		
-		grid = new GridPane();
-		grid.setVgap(20);
-		grid.setHgap(20);
-		grid.setPadding(new Insets(10, 10, 10, 10));
-		//grid.setGridLinesVisible(true);
+		//currentPropositionStr = "( []-_[]- )";
+		
+		layout = new VBox(20);
+		layout.setAlignment(Pos.CENTER);
+		layout.setPadding(new Insets(20, 20, 20, 20));
+		
+		
+
 		
 		
 		
-		auxOpsString = "";
-		negationSymbol = "~";
-		possibilitySymbol = "\u25C7";
-		necessitySymbol = "\u2610";
-		universalSymbol = "\u2200";
-		existentialSymbol = "\u2203";
-		
-		
-		/*
-		logicTypeLabel = new Label("Select logic type");
-		GridPane.setConstraints(logicTypeLabel, 0, 0);
-		
-		logicTypeGroup = new ToggleGroup();
-		logicTypeGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
-			public void changed(ObservableValue<? extends Toggle> observed, Toggle oldVal, Toggle newVal) {
-				if (logicTypeGroup.getSelectedToggle() == classicalRb) {
-					logicType = LogicType.CLASSICAL;
-				} else if (logicTypeGroup.getSelectedToggle() == predicateRb) {
-					logicType = LogicType.PREDICATE;
-				} else if (logicTypeGroup.getSelectedToggle() == modalRb) {
-					logicType = LogicType.MODAL;
-				} else {
-					System.out.println("Some error");
-				}
-			}
-		});
-		
-		classicalRb = new RadioButton("Classical");
-		classicalRb.setToggleGroup(logicTypeGroup);
-		
-		predicateRb = new RadioButton("Predicate");
-		predicateRb.setToggleGroup(logicTypeGroup);
-		
-		modalRb = new RadioButton("Modal");
-		modalRb.setToggleGroup(logicTypeGroup);
-		
-		logicTypeVBox = new VBox(7.5);
-		logicTypeVBox.getChildren().addAll(classicalRb, predicateRb, modalRb);
-		GridPane.setConstraints(logicTypeVBox, 0, 1);
-		
-		*/
-		
-		// ====================================== LABELS
 		
 		
 		
-		auxOpsLabel = new Label("Auxillary operator");
-		auxOpsLabel.setAlignment(Pos.CENTER);
-		auxOpsLabel.setPrefWidth(130);
-		GridPane.setConstraints(auxOpsLabel, 0, 0);
 		
-		atomicLabel = new Label("Atomic");
-		atomicLabel.setAlignment(Pos.CENTER);
-		atomicLabel.setPrefWidth(80);
-		GridPane.setConstraints(atomicLabel, 3, 0);
-		
-		firstOperandLabel = new Label("First operand");
-		firstOperandLabel.setAlignment(Pos.CENTER);
-		firstOperandLabel.setPrefWidth(100);
-		GridPane.setConstraints(firstOperandLabel, 4, 0);
-		
-		rightOperandLabel = new Label("Second operand");
-		rightOperandLabel.setAlignment(Pos.CENTER);
-		rightOperandLabel.setPrefWidth(100);
-		GridPane.setConstraints(rightOperandLabel, 6, 0);
-		
-		operatorLabel = new Label("Operator");
-		operatorLabel.setAlignment(Pos.CENTER);
-		operatorLabel.setPrefWidth(100);
-		GridPane.setConstraints(operatorLabel, 5, 0);
-		
-		stagingLabel = new Label("Staged proposition");
-		stagingLabel.setAlignment(Pos.CENTER);
-		GridPane.setConstraints(stagingLabel, 0, 3, 8, 1, HPos.CENTER, VPos.CENTER);
-		
-		chainWithOperatorLabel = new Label("Chain with operator");
-		chainWithOperatorLabel.setAlignment(Pos.CENTER);
-		
-		asLabel = new Label("as");
-		asLabel.setAlignment(Pos.CENTER);
-		
-		currentChainLabel = new Label("Current chain");
-		currentChainLabel.setAlignment(Pos.CENTER);
-		GridPane.setConstraints(currentChainLabel, 0, 5, 8, 1, HPos.CENTER, VPos.CENTER);
-		
-		// =============== RADIO BUTTONS
-		
-		operandToggleGroup = new ToggleGroup();
-		
-		asFirstOperandCheck = new RadioButton("First operand");
-		asFirstOperandCheck.setToggleGroup(operandToggleGroup);
-		asSecondOperandCheck = new RadioButton("Second operand");
-		asSecondOperandCheck.setToggleGroup(operandToggleGroup);
-		
-		
-		
-		// ============= CHECKBOXES
-		
-		atomicCheck = new CheckBox();
-		atomicCheck.setAlignment(Pos.CENTER);
-		atomicCheck.selectedProperty().addListener(new ChangeListener<Boolean>() {
+		singlePropCheck = new CheckBox();
+		singlePropCheck.setAlignment(Pos.CENTER);
+		singlePropCheck.selectedProperty().addListener(new ChangeListener<Boolean>() {
 			@Override
 			public void changed(ObservableValue<? extends Boolean> observed, Boolean oldVal, Boolean newVal) {
-				if (atomicCheck.isSelected()) {
-					stagingOperatorChoice.setDisable(true);
+				clearUi();
+				if (singlePropCheck.isSelected()) {
+					addMainAuxOps.setDisable(true);
+					mainAuxOps = null;
+					operatorChoice.setDisable(true);
+					addAuxOpToSecond.setDisable(true);
+					secondAuxOps = null;
 					secondOperandChoice.setDisable(true);
 				}else {
-					stagingOperatorChoice.setDisable(false);
+					addMainAuxOps.setDisable(false);
+					operatorChoice.setDisable(false);
+					addAuxOpToSecond.setDisable(false);
 					secondOperandChoice.setDisable(false);
 				}
 				
 			}
 		});
-		StackPane stackForAtomicCheck = new StackPane();
-		stackForAtomicCheck.getChildren().add(atomicCheck);
-		GridPane.setConstraints(stackForAtomicCheck, 3, 1);
+		GridPane.setConstraints(singlePropCheck, 2, 0, 1, 1, HPos.CENTER, VPos.CENTER);
 		
-		// ============== COMBOBOX ITEMS
+		singlePropLabel = new Label("Single Proposition");
+		singlePropLabel.setAlignment(Pos.CENTER);
+		singlePropLabel.setPrefWidth(100);
+		GridPane.setConstraints(singlePropLabel, 0, 0);
 		
-		ArrayList<String> modalOps = new ArrayList<String>(Arrays.asList("POSSIBILITY", "NECESSITY"));
-		ArrayList<String> predicateOps = new ArrayList<String>(Arrays.asList("UNIVERSAL", "EXISTENTIAL"));
-		String negationOp = "NEGATION";
+		firstOperandLabel = new Label("First operand");
+		firstOperandLabel.setAlignment(Pos.CENTER);
+		firstOperandLabel.setPrefWidth(100);
+		GridPane.setConstraints(firstOperandLabel, 0, 1);
 		
-		// =============== COMBOBOXES
+		rightOperandLabel = new Label("Second operand");
+		rightOperandLabel.setAlignment(Pos.CENTER);
+		rightOperandLabel.setPrefWidth(100);
+		GridPane.setConstraints(rightOperandLabel, 0, 3);
 		
-		auxOpsChoice = new ComboBox<String>();
-		auxOpsChoice.getItems().addAll(negationOp);
-		if (logicType == LogicType.CLASSICAL) {
-			
-		}else if (logicType == LogicType.PREDICATE) {
-			auxOpsChoice.getItems().addAll(predicateOps);
-		}else if (logicType == LogicType.MODAL) {
-			auxOpsChoice.getItems().addAll(modalOps);
-		}
-		GridPane.setConstraints(auxOpsChoice, 0, 1, 1, 1, HPos.CENTER, VPos.CENTER);
+		operatorLabel = new Label("Operator");
+		operatorLabel.setAlignment(Pos.CENTER);
+		operatorLabel.setPrefWidth(100);
+		GridPane.setConstraints(operatorLabel, 0, 2);
+		
+		currentPropositionLabel = new Label("Current proposition");
+		currentPropositionLabel.setAlignment(Pos.CENTER);
+		currentPropositionLabel.setPrefWidth(150);
+
+		
+		firstOperandChoice = new ComboBox<Proposition>();
+		firstOperandChoice.setPrefWidth(200);
+		firstOperandChoice.getItems().addAll(firstPropositionList);
+		firstOperandChoice.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Proposition> () {
+			@Override
+			public void changed(ObservableValue<? extends Proposition> proposition, Proposition oldVal, Proposition newVal) {
+				if (newVal != null) {
+					if (oldVal != newVal) {
+						chosenFirstOperand = newVal.copy();
+						firstOperandForString = newVal.copy();
+						if (firstAuxOps != null) {
+							chosenFirstOperand.setAuxOps(firstAuxOps);
+						}
+						propStr.setFirstOperand(firstOperandForString);
+						currentPropositionField.setText(propStr.toString());
+					}
+				}
+				
+			}
+		});
+		GridPane.setConstraints(firstOperandChoice, 2, 1, 1, 1, HPos.CENTER, VPos.CENTER);
+		
+		secondOperandChoice = new ComboBox<Proposition>();
+		secondOperandChoice.setPrefWidth(200);
+		secondOperandChoice.getItems().addAll(secondPropositionList);
+		secondOperandChoice.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Proposition> () {
+			@Override
+			public void changed(ObservableValue<? extends Proposition> proposition, Proposition oldVal, Proposition newVal) {
+				if (newVal != null) {
+					if (oldVal != newVal) {
+						chosenSecondOperand = newVal.copy();
+						secondOperandForString = newVal.copy();
+						if (secondAuxOps != null) {
+							chosenSecondOperand.setAuxOps(secondAuxOps);
+						}
+						propStr.setSecondOperand(secondOperandForString);
+						currentPropositionField.setText(propStr.toString());
+					}
+				}
+			}
+		});
+		GridPane.setConstraints(secondOperandChoice, 2, 3, 1, 1, HPos.CENTER, VPos.CENTER);
+		
+		operatorChoice = new ComboBox<Operator>();
+		operatorChoice.getItems().addAll(new Operator(OperatorType.OR), 
+				new Operator(OperatorType.AND), 
+				new Operator(OperatorType.IF), 
+				new Operator(OperatorType.EQUALS));
+		operatorChoice.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<Operator> () {
+			@Override
+			public void changed(ObservableValue<? extends Operator> operator, Operator oldVal, Operator newVal) {
+				if (newVal != null) {
+					if (oldVal != newVal) {
+						chosenOperator = newVal.copy();
+						propStr.setOperator(chosenOperator);
+						currentPropositionField.setText(propStr.toString());
+					}
+				}
+				
+				
+			}
+		});
+		GridPane.setConstraints(operatorChoice, 2, 2, 1, 1, HPos.CENTER, VPos.CENTER);
+		
+		// ====== BUTTONS
 		
 
-		firstOperandChoice = new ComboBox<AtomicProposition>();
-		firstOperandChoice.getItems().addAll(propositionList);
-		GridPane.setConstraints(firstOperandChoice, 4, 1, 1, 1, HPos.CENTER, VPos.CENTER);
-		
-		secondOperandChoice = new ComboBox<AtomicProposition>();
-		secondOperandChoice.getItems().addAll(propositionList);
-		GridPane.setConstraints(secondOperandChoice, 6, 1, 1, 1, HPos.CENTER, VPos.CENTER);
-		
-		stagingOperatorChoice = new ComboBox<Operator>();
-		stagingOperatorChoice.getItems().addAll(new Operator(OperatorType.OR), 
-				new Operator(OperatorType.AND), 
-				new Operator(OperatorType.IF), 
-				new Operator(OperatorType.EQUALS));
-		GridPane.setConstraints(stagingOperatorChoice, 5, 1, 1, 1, HPos.CENTER, VPos.CENTER);
-		
-		chainWithOperatorChoice = new ComboBox<Operator>();
-		chainWithOperatorChoice.getItems().addAll(new Operator(OperatorType.OR), 
-				new Operator(OperatorType.AND), 
-				new Operator(OperatorType.IF), 
-				new Operator(OperatorType.EQUALS));
-		chainWithOperatorChoice.setDisable(true);
-		
-		chainWithOperandChoice = new ComboBox<String>();
-		chainWithOperandChoice.getItems().addAll("First operand", "Second operand");
-		chainWithOperandChoice.setDisable(true);
-		
-		
-		// ========== BUTTONS
-		
-		addAuxOp = new Button("+");
-		addAuxOp.setOnAction(e -> {
-			addAuxOp();
+		addMainAuxOps = new Button("+");
+		addMainAuxOps.setOnAction(e -> {
+			mainAuxOps = addAuxOps();
+			if (mainAuxOps != null) {
+				//replaceAuxOps(true);
+				propStr.setMainAuxOps(mainAuxOps);
+				currentPropositionField.setText(propStr.toString());
+			}
+			
 		});
-		GridPane.setConstraints(addAuxOp, 1, 1);
+		GridPane.setConstraints(addMainAuxOps, 1, 2);
 		
-		addPropToStaging = new Button("Add proposition to staging");
-		addPropToStaging.setPrefWidth(250);
-		addPropToStaging.setOnAction(e -> {
-			addNewPropToStaging();
+		addAuxOpToFirst = new Button("+");
+		addAuxOpToFirst.setOnAction(e -> {
+			firstAuxOps = addAuxOps();
+			if (firstAuxOps != null) {
+				//replaceAuxOps(true);
+				if (chosenFirstOperand != null) {
+					chosenFirstOperand.setAuxOps(firstAuxOps);
+					
+				}
+				propStr.setFirstOperandAuxOps(firstAuxOps);
+				currentPropositionField.setText(propStr.toString());
+			}
+			
 		});
-		GridPane.setConstraints(addPropToStaging, 7, 1, 1, 1, HPos.CENTER, VPos.CENTER);
+		GridPane.setConstraints(addAuxOpToFirst, 1, 1);
 		
-		addPropToChain = new Button("Add proposition to chain");
-		addPropToChain.setPrefWidth(250);
-		addPropToChain.setDisable(true);
-		addPropToChain.setOnAction(e -> {
-			addPropToChain();
+		addAuxOpToSecond = new Button("+");
+		addAuxOpToSecond.setOnAction(e -> {
+			secondAuxOps = addAuxOps();
+			if (secondAuxOps != null) {
+				//replaceAuxOps(false);
+				if (chosenSecondOperand != null) {
+					chosenSecondOperand.setAuxOps(secondAuxOps);
+					
+				}
+				propStr.setSecondOperandAuxOps(secondAuxOps);
+				currentPropositionField.setText(propStr.toString());
+			}
+			
 		});
-		GridPane.setConstraints(addPropToChain, 7, 4, 1, 1, HPos.CENTER, VPos.CENTER);
+		GridPane.setConstraints(addAuxOpToSecond, 1, 3);
+		
+		addToPropLists = new Button("Add to operand lists");
+		addToPropLists.setPrefWidth(180);
+		addToPropLists.setOnAction(e -> {
+			addPropToLists();
+		});
+		//GridPane.setConstraints(addToPropLists, 3, 1, 1, 1, HPos.CENTER, VPos.CENTER);
+		
+		clearAll = new Button("Clear all");
+		clearAll.setPrefWidth(180);
+		clearAll.setOnAction(e -> {
+			initDefaults();
+			clearUi();
+			
+		});
 		
 		completeProp = new Button("Complete proposition");
-		completeProp.setPrefWidth(250);
-		completeProp.setDisable(true);
+		completeProp.setPrefWidth(180);
 		completeProp.setOnAction(e -> {
 			completeProposition();
 		});
-		GridPane.setConstraints(completeProp, 7, 6, 1, 1, HPos.CENTER, VPos.CENTER);
 		
-		clearAll = new Button("Clear all");
-		clearAll.setPrefWidth(200);
-		clearAll.setOnAction(e -> {
-			clearAllPropositions();
-		});
-		GridPane.setConstraints(clearAll, 0, 7, 8, 1, HPos.CENTER, VPos.CENTER);
-		
-		
-		// ================ TEXTFIELDS
-		
-		auxOpsChainField = new TextField();
-		auxOpsChainField.setEditable(false);
-		GridPane.setConstraints(auxOpsChainField, 2, 1);
-		
-		stagedPropField = new TextField();
-		stagedPropField.setEditable(false);
-		GridPane.setConstraints(stagedPropField, 0, 4, 7, 1);
-		
-		currentChainField = new TextField();
-		currentChainField.setEditable(false);
-		GridPane.setConstraints(currentChainField, 0, 6, 7, 1);
 		
 		
 		// ============ SEPARATORS
 		
-		Separator sep = new Separator(Orientation.HORIZONTAL);
-		GridPane.setConstraints(sep, 0, 2, 8, 1);
+		Separator sep1 = new Separator(Orientation.HORIZONTAL);
+		GridPane.setConstraints(sep1, 0, 2, 1, 1, HPos.CENTER, VPos.CENTER, Priority.ALWAYS, Priority.ALWAYS, new Insets(20, 0, 20, 0));
+				
+		Separator sep2 = new Separator(Orientation.HORIZONTAL);
+		GridPane.setConstraints(sep2, 0, 7, 1, 1, HPos.CENTER, VPos.CENTER, Priority.ALWAYS, Priority.ALWAYS, new Insets(20, 0, 20, 0));
 		
-		// ================== H and V BOXES
+		// ======== TEXTFIELDS
 		
-		operandRadioButtons = new VBox(10);
-		operandRadioButtons.setAlignment(Pos.CENTER_LEFT);
-		operandRadioButtons.getChildren().addAll(asFirstOperandCheck, asSecondOperandCheck);
-		//GridPane.setConstraints(operandRadioButtons, 0, 7, 7, 1, HPos.CENTER, VPos.CENTER);
+		currentPropositionField = new TextField();
+		currentPropositionField.setAlignment(Pos.CENTER);
+		currentPropositionField.setText(propStr.toString());
+		currentPropositionField.setEditable(false);
 		
-		chainWithRow = new HBox(10);
-		chainWithRow.setAlignment(Pos.CENTER);
-		chainWithRow.getChildren().addAll(chainWithOperatorLabel, chainWithOperatorChoice, asLabel, chainWithOperandChoice);
-		GridPane.setConstraints(chainWithRow, 7, 3);
+		// =========================== LAYOUTS
 		
-		// ============ ADD TO GRID
+		propositionGrid = new GridPane();
+		propositionGrid.setVgap(20);
+		propositionGrid.setHgap(20);
+		propositionGrid.getChildren().addAll(singlePropCheck, singlePropLabel, firstOperandLabel, rightOperandLabel, operatorLabel, 
+				firstOperandChoice, secondOperandChoice, operatorChoice, 
+				addMainAuxOps, addAuxOpToFirst, addAuxOpToSecond);
 		
-		grid.getChildren().addAll(auxOpsLabel, atomicLabel, firstOperandLabel, rightOperandLabel, operatorLabel, stagingLabel, currentChainLabel, 
-				auxOpsChoice, firstOperandChoice, secondOperandChoice, stagingOperatorChoice,
-				auxOpsChainField, stagedPropField, currentChainField, 
-				addAuxOp, addPropToStaging, addPropToChain, completeProp, clearAll, 
-				sep, chainWithRow, stackForAtomicCheck);
+		completionButtonsRow = new HBox(10);
+		completionButtonsRow.setAlignment(Pos.CENTER); 
+		completionButtonsRow.getChildren().addAll(addToPropLists, completeProp);
+		//GridPane.setConstraints(completionButtonsRow, 0, 10, 1, 1, HPos.CENTER, VPos.CENTER);
 		
-		scene = new Scene(grid);
+		layout.getChildren().addAll(propositionGrid, sep1, currentPropositionLabel, currentPropositionField, completionButtonsRow, sep2, clearAll);
+		
+		
+		
+		scene = new Scene(layout);
 		window.setScene(scene);
 		window.showAndWait();
 	}
 	
-	public void addAuxOp() {
-		if (auxOpsChoice.getSelectionModel().isEmpty()) {
-			WarningModal warning = new WarningModal("Please choose an auxillary operator");
-		}else {
-			AuxillaryOperator auxOp = new AuxillaryOperator();
-			if (auxOpsChoice.getSelectionModel().getSelectedItem().equals("NEGATION")) {
-				auxOpsString = negationSymbol + auxOpsString;
-				auxOp.setAuxOp(AuxillaryOperatorType.NEGATION); 
-			}else if (auxOpsChoice.getSelectionModel().getSelectedItem().equals("POSSIBILITY")) {
-				auxOpsString = possibilitySymbol + " " + auxOpsString;
-				auxOp.setAuxOp(AuxillaryOperatorType.POSSIBILITY);
-			}else if (auxOpsChoice.getSelectionModel().getSelectedItem().equals("NECESSITY")) {
-				auxOpsString = necessitySymbol + " " + auxOpsString;
-				auxOp.setAuxOp(AuxillaryOperatorType.NECESSITY);
-			}else if (auxOpsChoice.getSelectionModel().getSelectedItem().equals("UNIVERSAL")){
-				auxOpsString = universalSymbol + " " + auxOpsString;
-				auxOp.setAuxOp(AuxillaryOperatorType.UNIVERSAL);
-			}else if (auxOpsChoice.getSelectionModel().getSelectedItem().equals("EXISTENTIAL")) {
-				auxOpsString = existentialSymbol + " " + auxOpsString;
-				auxOp.setAuxOp(AuxillaryOperatorType.EXISTENTIAL);
-			}else {
-
-			}
-			auxOps.add(0, auxOp);
-			auxOpsChainField.setText(auxOpsString);
-		}
-		
+	public void resetTextField() {
+		propStr = new PropComponentString();
+		currentPropositionField.setText(propStr.toString());
 	}
-
 	
-	public void addNewPropToStaging() {
-		if ((firstOperandChoice.getSelectionModel().isEmpty() & atomicCheck.isSelected() == true) | 
+	public boolean isValidProposition() {
+		if ((firstOperandChoice.getSelectionModel().isEmpty() & singlePropCheck.isSelected() == true) | 
 				((firstOperandChoice.getSelectionModel().isEmpty() |
-						stagingOperatorChoice.getSelectionModel().isEmpty() | 
-						secondOperandChoice.getSelectionModel().isEmpty()) & atomicCheck.isSelected() == false)) {
-			WarningModal warning = new WarningModal("Please choose a valid proposition");
+						operatorChoice.getSelectionModel().isEmpty() | 
+						secondOperandChoice.getSelectionModel().isEmpty()) & singlePropCheck.isSelected() == false)) {
+			return false;
+		
 		}else {
-			String variable = firstOperandChoice.getSelectionModel().getSelectedItem().getVariableName();
-			AtomicProposition firstAtom = firstOperandChoice.getSelectionModel().getSelectedItem();
-			AtomicProposition secondAtom = secondOperandChoice.getSelectionModel().getSelectedItem();
-			Operator op = stagingOperatorChoice.getSelectionModel().getSelectedItem();
-			
-			if (atomicCheck.isSelected() == false) {
-				stagedProposition = new CompoundProposition(firstAtom, 
-						secondAtom, 
-						op, 
-						auxOps);
-			}else {
-				stagedProposition = new AtomicProposition(auxOps, variable);
-				
-			}
-			stagedProposition = stagedProposition.copy();
-			stagedPropField.setText(stagedProposition.toString());
-			
-			auxOps = new ArrayList<AuxillaryOperator>();
-			
-			auxOpsChoice.setDisable(true);
-			addAuxOp.setDisable(true);
-			atomicCheck.setDisable(true);
-			firstOperandChoice.setDisable(true);
-			secondOperandChoice.setDisable(true);
-			stagingOperatorChoice.setDisable(true);
-			addPropToStaging.setDisable(true);
-			
-			if (rootProposition != null) {
-				chainWithOperatorChoice.setDisable(false);
-				chainWithOperandChoice.setDisable(false);
-			}
-			
-			addPropToChain.setDisable(false);
+			return true;
 		}
-		
-		
-		
-		
-		
-		
-
-
 	}
 	
-	public void addPropToChain() {
-		if (chainWithOperatorChoice.getSelectionModel().isEmpty() & rootProposition != null) {
-			WarningModal warning = new WarningModal("Please choose an operator");
-		}else {
-			if (rootProposition != null) {
-				if (chainWithOperandChoice.getSelectionModel().getSelectedItem().equals("First operand")) {
-					rootProposition = new CompoundProposition(stagedProposition, 
-							rootProposition, 
-							chainWithOperatorChoice.getSelectionModel().getSelectedItem(), 
-							auxOps);
-				}else if (chainWithOperandChoice.getSelectionModel().getSelectedItem().equals("Second operand")) {
-					rootProposition = new CompoundProposition(rootProposition, 
-							stagedProposition, 
-							chainWithOperatorChoice.getSelectionModel().getSelectedItem(), 
-							auxOps);
-				}
-				
+	public Proposition constructProposition() {
+		AtomicProposition atomicToAdd = null;
+		CompoundProposition compoundToAdd = null;
+
+		if (singlePropCheck.isSelected()) {
+			if (firstAuxOps == null) {
+				// popUp error window
+				WarningModal warning = new WarningModal("Proposition already exists");
 			}else {
-				rootProposition = stagedProposition;
-			}
-			rootProposition = rootProposition.copy();
-			
-			currentChainField.setText(rootProposition.toString());
-			
-			
-			auxOpsChoice.setDisable(false);
-			addAuxOp.setDisable(false);
-			atomicCheck.setDisable(false);
-			firstOperandChoice.setDisable(false);
-			if (atomicCheck.isSelected() == false) {
-				secondOperandChoice.setDisable(false);
-				stagingOperatorChoice.setDisable(false);
+				
+				if (chosenFirstOperand instanceof AtomicProposition) {
+					//chosenFirstOperand = (AtomicProposition) chosenFirstOperand;
+					
+					atomicToAdd = (AtomicProposition) chosenFirstOperand;
+				}else {
+					compoundToAdd = (CompoundProposition) chosenFirstOperand;
+				}
 			}
 			
-			addPropToStaging.setDisable(false);
 			
-			completeProp.setDisable(false);
-			addPropToChain.setDisable(true);
-			chainWithOperatorChoice.setDisable(true);
-			chainWithOperandChoice.setDisable(true);
-			
-			stagedPropField.clear();
-			auxOps = new ArrayList<AuxillaryOperator>();
-			auxOpsChainField.clear();
+		}else {
+			compoundToAdd = new CompoundProposition(chosenFirstOperand, chosenSecondOperand, chosenOperator, mainAuxOps);
 		}
 		
+		
+		if (atomicToAdd != null) {
+			return atomicToAdd;
+
+
+		}else if (compoundToAdd != null) {
+			return compoundToAdd;
+
+
+		}else {
+			return null;
+		}
+	}
+	
+	
+	public void addPropToLists() {
+		if (isValidProposition()) {
+			
+
+			Proposition toAdd = constructProposition();
+			
+			
+			if (toAdd != null) {
+				firstPropositionList.add(toAdd.copy());
+				secondPropositionList.add(toAdd.copy());
+
+			}
+			
+			firstOperandChoice.getItems().clear();
+			secondOperandChoice.getItems().clear();
+			
+			firstOperandChoice.getItems().addAll(firstPropositionList);
+			secondOperandChoice.getItems().addAll(secondPropositionList);
+			
+			mainAuxOps = null;
+			firstAuxOps = null;
+			secondAuxOps = null;
+
+			
+			clearUi();
+		}else {
+			WarningModal warning = new WarningModal("Please choose a valid proposition");
+		}
+
 	}
 	
 	public void completeProposition() {
-		windowController.setStoredProp(rootProposition);
+		Proposition toReturn = constructProposition();
+		windowController.setStoredProp(toReturn);
 		window.close();
 	}
 	
-	public void clearAllPropositions() {
-		stagedProposition = new CompoundProposition();
-		rootProposition = new CompoundProposition();
-		auxOps = new ArrayList<AuxillaryOperator>();
-		stagedPropField.clear();
-		currentChainField.clear();
-		chainWithOperatorChoice.setDisable(true);
-		chainWithOperandChoice.setDisable(true);
-		completeProp.setDisable(true);
+	public void initDefaults() {
+		propStr = new PropComponentString();
+		
+		firstPropositionList = new ArrayList<Proposition>(Arrays.asList(new AtomicProposition(null, "p"), 
+				new AtomicProposition(null, "q"), 
+				new AtomicProposition(null, "r"), 
+				new AtomicProposition(null, "a"), 
+				new AtomicProposition(null, "b"), 
+				new AtomicProposition(null, "c")
+				));
+		
+		secondPropositionList = new ArrayList<Proposition>(Arrays.asList(new AtomicProposition(null, "p"), 
+				new AtomicProposition(null, "q"), 
+				new AtomicProposition(null, "r"), 
+				new AtomicProposition(null, "a"), 
+				new AtomicProposition(null, "b"), 
+				new AtomicProposition(null, "c")
+				));
+		
+		
+		mainAuxOps = null;
+		firstAuxOps = null;
+		secondAuxOps = null;
+		
+		
+		
+		
+		
+	}
+	
+	public void clearUi() {
+
+		resetTextField();
+		
+		firstOperandChoice.getItems().clear();
+		secondOperandChoice.getItems().clear();
+		operatorChoice.getItems().clear();
+		
+		firstOperandChoice.getItems().addAll(firstPropositionList);
+		secondOperandChoice.getItems().addAll(secondPropositionList);
+		operatorChoice.getItems().addAll(new Operator(OperatorType.OR), 
+				new Operator(OperatorType.AND), 
+				new Operator(OperatorType.IF), 
+				new Operator(OperatorType.EQUALS));
+		
+
+	}
+	
+	public ArrayList<AuxillaryOperator> addAuxOps(){
+		WindowController controller = new WindowController();
+		AuxOpBuilder auxOpBuilder = new AuxOpBuilder(logicType, controller);
+		ArrayList<AuxillaryOperator> returnedAuxOps = controller.getStoredAuxOps();
+		return returnedAuxOps;
+	}
+	
+	
+	// ============ STRING MANIPULATION AND REPLACEMENT
+	
+	
+	
+	public void replaceAuxOps(boolean replaceFirst) {
+		int indexOfFirstOpeningBracket = currentPropositionStr.indexOf('[');
+		int indexOfFirstClosingBracket = currentPropositionStr.indexOf(']');
+		int indexOfSecondOpeningBracket = currentPropositionStr.indexOf('[', indexOfFirstOpeningBracket + 1);
+		int indexOfSecondClosingBracket = currentPropositionStr.indexOf(']', indexOfFirstClosingBracket + 1);
+		String firstHalf;
+		String insertion;
+		String secondHalf;
+
+		if (replaceFirst) {
+			insertion = buildAuxOpStr(firstAuxOps);
+			currentPropositionStr = insertItemInString(0, indexOfFirstOpeningBracket + 1, insertion, indexOfFirstClosingBracket);
+		}else {
+			insertion = buildAuxOpStr(secondAuxOps);
+			currentPropositionStr = insertItemInString(0, indexOfSecondOpeningBracket + 1, insertion, indexOfSecondClosingBracket);
+		} 
+		
+	}
+	
+	public void replaceOperator() {
+		int indexOfOperator = findIndexOfOperator();
+		Operator chosenOperator = operatorChoice.getSelectionModel().getSelectedItem();
+		currentPropositionStr = insertItemInString(0, indexOfOperator, chosenOperator.toString(), indexOfOperator + 1);
+		
+	}
+	
+	public void replaceOperand(boolean replaceFirst) {
+		
+
+		if (replaceFirst) {
+			Proposition firstOperand = firstOperandChoice.getSelectionModel().getSelectedItem();
+
+			int[] indexesOfFirstOperand = findIndexesOfOperand(true);
+			String firstOperandStr = firstOperand.toString();
+			currentPropositionStr = insertItemInString(0, indexesOfFirstOperand[0], firstOperandStr, indexesOfFirstOperand[1]);
+
+			
+		}else {
+			Proposition secondOperand = secondOperandChoice.getSelectionModel().getSelectedItem();
+
+			int[] indexesOfSecondOperand = findIndexesOfOperand(false);
+			String secondOperandStr = secondOperand.toString();
+			currentPropositionStr = insertItemInString(0, indexesOfSecondOperand[0], secondOperandStr, indexesOfSecondOperand[1]);
+
+			
+		}
+	}
+	
+	
+	// ============ INDEX FINDING 
+	
+	public int findIndexOfOperator() {
+		int absoluteOpeningBracket = currentPropositionStr.indexOf('(');
+		int absoluteClosingBracket = currentPropositionStr.lastIndexOf(')');
+		ArrayList<Character> operators = new ArrayList<Character>(Arrays.asList('_', '&', 'V', '\u2283', '='));
+		for (int i = 0; i < currentPropositionStr.length() - 1; i ++) {
+			if (operators.indexOf(currentPropositionStr.charAt(i)) != -1) {
+				int[] indexesOfBrackets = findSurroundingBrackets(currentPropositionStr, i);
+				if (indexesOfBrackets[0] == absoluteOpeningBracket & indexesOfBrackets[1] == absoluteClosingBracket) {
+					return i;
+				}
+			}
+		}
+		return -1;
+	}
+	
+	public int[] findIndexesOfOperand(boolean findFirst) {
+		int operatorIndex = findIndexOfOperator();
+		
+		String firstHalfStr = currentPropositionStr.substring(0, operatorIndex);
+		String secondHalfStr = currentPropositionStr.substring(operatorIndex + 1);
+		
+		int indexOfAbsoluteOpen = currentPropositionStr.indexOf('(');
+		int indexOfAbsoluteClose = currentPropositionStr.lastIndexOf(')');
+		
+		
+		int indexOfFirstDash;
+		int indexOfSecondDash;
+		
+		int indexOfOperandStart;
+		int indexOfOperandEnd;
+		if (findFirst) {
+			indexOfFirstDash = firstHalfStr.indexOf('-');
+			if (indexOfFirstDash != -1) {
+				return new int[] {indexOfFirstDash, indexOfFirstDash + 1};
+			}else {
+				for (Proposition propInList : firstPropositionList) {
+					indexOfOperandStart = firstHalfStr.indexOf(propInList.toString());
+					if (indexOfOperandStart != -1) {
+						indexOfOperandEnd = indexOfOperandStart + propInList.toString().length();
+						return new int[] {indexOfOperandStart, indexOfOperandEnd};
+					}
+				}
+			}
+			
+		}else {
+			indexOfSecondDash = secondHalfStr.indexOf('-');
+			if (indexOfSecondDash != -1) {
+				indexOfSecondDash += firstHalfStr.length() + 1;
+				return new int[] {indexOfSecondDash, indexOfSecondDash + 1};
+			}else {
+				//int indexOfOpeningBracketWithinMainProp = currentPropositionStr.indexOf('(', indexOfOpeningBracket);
+				for (Proposition propInList : secondPropositionList) {
+					indexOfOperandStart = secondHalfStr.indexOf(propInList.toString());
+					if (indexOfOperandStart != -1) {
+						indexOfOperandStart = indexOfOperandStart + firstHalfStr.length() + 1;
+						indexOfOperandEnd = indexOfOperandStart + propInList.toString().length();
+						return new int[] {indexOfOperandStart, indexOfOperandEnd};
+					}
+				}
+			}
+			
+		}
+		return new int[] {};
+		
+	}
+	
+	
+	// ============= UTIL STRING MANIPULATION
+	
+	public int[] findSurroundingBrackets(String stringToSearch, int initialIndex) {
+		int propsToTheRight = 0;
+		int propsToTheLeft = 0;
+		
+		int indexOfOpeningBracket = -1;
+		int indexOfClosingBracket = -1;
+		
+		boolean foundOpening = false;
+		boolean foundClosing = false;
+		
+		int i = initialIndex;
+		int j = initialIndex;
+		
+		while (foundOpening == false) {
+			if (stringToSearch.charAt(i) == ')') {
+				propsToTheLeft += 1;
+			}else if (stringToSearch.charAt(i) == '(') {
+				propsToTheLeft -= 1;
+			}
+			if (propsToTheLeft == -1) {
+				indexOfOpeningBracket = i;
+				foundOpening = true;
+			}
+			i -= 1;
+		}
+		
+		while (foundClosing == false) {
+			if (stringToSearch.charAt(j) == '(') {
+				propsToTheRight += 1;
+			}else if (stringToSearch.charAt(j) == ')') {
+				propsToTheRight -= 1;
+			}
+			if (propsToTheRight == -1) {
+				indexOfClosingBracket = j;
+				foundClosing = true;
+			}
+			j += 1;
+		}
+		
+		
+		
+		return new int[] {indexOfOpeningBracket, indexOfClosingBracket};
+	}
+	
+	
+	public String buildAuxOpStr(ArrayList<AuxillaryOperator> auxOps) {
+		String str = "";
+		for (int i = auxOps.size() - 1; i >= 0; i -= 1) {
+			AuxillaryOperator auxOp = auxOps.get(i);
+			str = auxOp + str;
+		}
+		return str;
+	}
+	
+	
+	
+	public String insertItemInString(int firstHalfStart, int firstHalfEnd, String insertion, int secondHalfStart) {
+		String firstHalf = currentPropositionStr.substring(firstHalfStart, firstHalfEnd);
+		String secondHalf = currentPropositionStr.substring(secondHalfStart);
+		return firstHalf + insertion + secondHalf;
 	}
 	
 	@Override

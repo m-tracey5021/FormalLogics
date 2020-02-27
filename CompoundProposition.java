@@ -2,6 +2,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 import enums.AuxillaryOperatorType;
+import enums.OperatorType;
 
 public class CompoundProposition extends Proposition {
 	
@@ -13,7 +14,7 @@ public class CompoundProposition extends Proposition {
 	
 
 	public CompoundProposition() {
-		super();
+		super("compound");
 	}
 	/*
 	public CompoundProposition(String rep, ArrayList<AuxillaryOperator> auxOps) {
@@ -27,13 +28,14 @@ public class CompoundProposition extends Proposition {
 	*/
 	
 	public CompoundProposition(Proposition firstOperand, Proposition secondOperand, Operator operator, ArrayList<AuxillaryOperator> auxOps) {
-		super(auxOps);
+		super("compound", auxOps);
 		this.firstOperand = firstOperand;
 		this.secondOperand = secondOperand;
 		//firstOperand.setParentProp(this);
 		//secondOperand.setParentProp(this);
 		this.parentProp = null;
 		this.operator = operator;
+		super.setPriority();
 
 		
 	}
@@ -52,7 +54,7 @@ public class CompoundProposition extends Proposition {
 	public Proposition getParentProp() {
 		return this.parentProp;
 	}
-	public Operator getOp() {
+	public Operator getOperator() {
 		return this.operator;
 	}
 
@@ -69,8 +71,8 @@ public class CompoundProposition extends Proposition {
 	public void setParentProp(CompoundProposition prop) {
 		this.parentProp = prop;
 	}
-	public void setOp(Operator op) {
-		this.operator = op;
+	public void setOperator(Operator operator) {
+		this.operator = operator;
 	}
 
 	
@@ -88,52 +90,10 @@ public class CompoundProposition extends Proposition {
 
 	}
 	
-	
-	/*
-	public CompoundProposition copy() {
-		CompoundProposition copiedProp;
-
-		ArrayList<AuxillaryOperator> copiedAuxOps = new ArrayList<AuxillaryOperator>();
-		for(AuxillaryOperator auxOp : this.getAuxOps()) {
-			AuxillaryOperator copiedAuxOp = auxOp.copy();
-			copiedAuxOps.add(copiedAuxOp);
-		}
-
-		
-		Proposition copiedFirst;
-		Proposition copiedSecond;
-		
-		if (firstOperand instanceof AtomicProposition) {
-			copiedFirst = ((AtomicProposition) firstOperand).copy();
-		}else {
-			copiedFirst = ((CompoundProposition) firstOperand).copy();
-		}
-		
-		if (secondOperand instanceof AtomicProposition) {
-			copiedSecond = ((AtomicProposition) secondOperand).copy();
-		}else {
-			copiedSecond = ((CompoundProposition) secondOperand).copy();
-		}
-
-		Operator copiedOperator = operator.copy();
-		
-		copiedProp = new CompoundProposition(copiedFirst, copiedSecond, copiedOperator, copiedAuxOps);
-		System.out.println("original prop: " + this.hashCode() + " rep: " + this.toString());
-		System.out.println("copied prop: " + copiedProp.hashCode() + " rep: " + this.toString());
-		return copiedProp;
-			
-
+	public String toStringWithoutAuxOps() {
+		return "(" + firstOperand.toString() + " " + operator.toString() + " " + secondOperand.toString() + ")";
 	}
-	
-	public boolean isMatch(CompoundProposition otherProp) {
-		if (this.toString().equals(otherProp.toString())) {
-			return true;
-		}else {
-			return false;
-		}
-	}
-	
-	*/
+
 }
 
 
