@@ -128,7 +128,7 @@ public class LogicEvaluatorWindow {
 		createNewProp.setPrefWidth(180);
 		createNewProp.setOnAction(e -> {
 			WindowController controller = new WindowController();
-			PropBuilder propBuilder = new PropBuilder(logicType, controller);
+			PropositionBuilder propBuilder = new PropositionBuilder(logicType, controller);
 			if (controller.getStoredProp() != null) {
 				Proposition returnedProp = controller.getStoredProp();
 				System.out.println("");
@@ -200,26 +200,7 @@ public class LogicEvaluatorWindow {
 		
 		generateModel = new Button("Generate model");
 		generateModel.setOnAction(e -> {
-			if (logicType == LogicType.MODAL || logicType == LogicType.CLASSICAL) {
-				modelPane.getChildren().clear();
-				TernaryNode treeStart = setupInitialTree();
-				RootNode rootNode = new RootNode(treeStart);
-				Universe rootUniverse = new Universe(false, false, false, false);
-				World rootWorld = new World(rootUniverse, rootNode);
-				rootWorld.expandWithinUniverse();
-
-				double xPos = 200.0;
-				for(World world : rootUniverse.getWorlds()) {
-					System.out.println(world);
-					world.getRootNode().getTreeStart().setupGeometry(xPos, 50.0, 45.0, 20.0, modelPane);
-					xPos  += 100;
-				}
-				scroll.setContent(modelPane);
-				resetModel.setDisable(false);
-
-			}else if (logicType == LogicType.PREDICATE) {
-				
-			}
+			generateModel();
 		});
 		generateModel.setDisable(true);
 		GridPane.setConstraints(generateModel, 0, 8, 1, 1, HPos.CENTER, VPos.CENTER);
@@ -327,12 +308,12 @@ public class LogicEvaluatorWindow {
 		// ========== PANES
 		
 		modelPane = new Pane();
-		//modelPane.setPrefSize(400, 400);
+		modelPane.setPrefSize(4000, 4000);
 
 		
-		modelPaneCenter = new StackPane();
-		modelPaneCenter.setPrefSize(400, 400);
-		modelPaneCenter.getChildren().add(modelPane);
+		//modelPaneCenter = new StackPane();
+		//modelPaneCenter.setPrefSize(400, 400);
+		//modelPaneCenter.getChildren().add(modelPane);
 		
 		
 		
@@ -340,8 +321,8 @@ public class LogicEvaluatorWindow {
 		scroll = new ScrollPane();
 		scroll.setPrefSize(400, 400);
 		scroll.setContent(modelPane);
-		scroll.setVbarPolicy(ScrollBarPolicy.ALWAYS);
-		scroll.setHbarPolicy(ScrollBarPolicy.ALWAYS);
+		scroll.setVbarPolicy(ScrollBarPolicy.NEVER);
+		scroll.setHbarPolicy(ScrollBarPolicy.NEVER);
 		scroll.setPannable(true);
 		GridPane.setConstraints(scroll, 1, 1, 1, 7);
 		
@@ -372,48 +353,59 @@ public class LogicEvaluatorWindow {
 		
 	}
 	
+	// ============== MODEL GENERATION
+	
+	public void generateModel() {
+		if (logicType == LogicType.MODAL || logicType == LogicType.CLASSICAL) {
+			modelPane.getChildren().clear();
+			TernaryNode treeStart = setupInitialTree();
+			RootNode rootNode = new RootNode(treeStart);
+			Universe rootUniverse = new Universe(false, false, false, false);
+			World rootWorld = new World(rootUniverse, rootNode);
+			rootWorld.expandWithinUniverse();
+
+			double modelWidth = 0.0;
+			double modelHeight = 0.0;
+			
+			double xPos = 200.0;
+			for(World world : rootUniverse.getWorlds()) {
+				System.out.println(world);
+				TernaryTreeModel newTree = new TernaryTreeModel(modelPane, world.getRootNode(), xPos, 50.0);
+				newTree.drawTree();
+				xPos  += 100;
+			}
+			scroll.setContent(modelPane);
+			resetModel.setDisable(false);
+
+		}else if (logicType == LogicType.PREDICATE) {
+			
+		}
+	}
+	
 	public TernaryNode setupInitialTree() {
 		ArrayList<TernaryNode> initialNodes = new ArrayList<TernaryNode>();
 		TernaryNode nodeToChain = new TernaryNode(propositions.get(0));
 		
 		for (int i = 0; i < propositions.size() - 1; i ++) {
-			nodeToChain.lane(propositions.get(i + 1), false);
+			nodeToChain.laneNode(propositions.get(i + 1));
 			nodeToChain = nodeToChain.getCenterNode();
 		}
 		
-		return nodeToChain.getRoot();
+		return nodeToChain.getTreeStart();
 	}
 	
-	// ================ FILE IO
+	
+	// ================ SERIALIZATION
+	
 	
 	public String serializePropositions() {
-		//JsonFactory factory = new JsonFactory();
+
 		ObjectMapper mapper = new ObjectMapper();
-		//ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		PropositionContainer container = new PropositionContainer(logicType, propositions);
 
 		try {
-			//JsonGenerator generator = factory.createGenerator(outputStream, JsonEncoding.UTF8);
-			
 			String propJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(container);
-			
-			/*
-			int propCount = 0;
-			generator.writeStartObject();
-			generator.writeArrayFieldStart("propositions");
-			for (Proposition propToSerialize : propositions) {
-				String propJson = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(propToSerialize);
-				generator.writeStringField("propsition " + propCount, propJson);
-			}
-			generator.writeEndArray();
-			generator.writeEndObject();
-			generator.close();
-			
-			String outputStr = new String(outputStream.toByteArray());
-			System.out.println(outputStr);
-			return outputStr;
-			
-			*/
+
 			return propJson;
 		}catch (IOException ex) {
 			ex.printStackTrace();
@@ -423,8 +415,7 @@ public class LogicEvaluatorWindow {
 		
 	}
 	
-	public PropositionContainer deserializePropositions(String jsonStr) { // WILL NOT WORK WITH RECURSIVE OBJECTS, MAKE YOUR OWN FUNCTION
-		//ArrayList<Proposition> importedProps = new ArrayList<Proposition>();
+	public PropositionContainer deserializePropositions(String jsonStr) { 
 		ObjectMapper mapper = new ObjectMapper();
 		PropositionDeserializer propDeserializer = new PropositionDeserializer();
 		
@@ -447,24 +438,17 @@ public class LogicEvaluatorWindow {
 				}
 			}
 			container = new PropositionContainer(returnedLogicType, importedProps);
-			//importedProps = mapper.readValue(jsonStr, Proposition[].class);
 		}catch (IOException ex) {
 			ex.printStackTrace();
 		}
 		
 		
-		/*
-		PropositionDeserializer propDeserializer = new PropositionDeserializer();
-		Proposition deserializedProp = propDeserializer.deserialize(jsonStr);
-		
-		
-		
-		importedProps.add(deserializedProp);
-		
-		*/
 		return container;
 		
 	}
+	
+	
+	// ============ FILE IO
 	
 	public String importFile() {
 		
@@ -506,6 +490,8 @@ public class LogicEvaluatorWindow {
 		
 	}
 	
+	// ============ MISC
+	
 	public void addImportedProps(PropositionContainer importedPropsContainer) {
 		propositions = importedPropsContainer.getPropositions();
 		propositionList.getChildren().clear();
@@ -526,5 +512,7 @@ public class LogicEvaluatorWindow {
 			return LogicType.CLASSICAL;
 		}
 	}
+	
+	
 	
 }
