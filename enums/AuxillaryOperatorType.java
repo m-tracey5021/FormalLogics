@@ -3,9 +3,9 @@ package enums;
 public enum AuxillaryOperatorType {
 	NONE,
 	NEGATION,
-	UNIVERSAL,
 	EXISTENTIAL,
 	NOTUNIVERSAL,
+	UNIVERSAL,
 	NOTEXISTENTIAL,
 	POSSIBLE,
 	NOTNECESSARY,
