@@ -71,7 +71,7 @@ public class AtomicProposition extends Proposition {
 			copiedAuxOps.add(copiedAuxOp);
 		}
 		AtomicProposition copiedAtomicProp = new AtomicProposition(copiedAuxOps, variable.copy());
-
+		copiedAtomicProp.assignVariablesForAll();
 		return copiedAtomicProp;
 	}
 

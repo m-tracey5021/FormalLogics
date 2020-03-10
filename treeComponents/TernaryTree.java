@@ -6,6 +6,7 @@ import java.util.UUID;
 import enums.AuxillaryOperatorType;
 import enums.InstanceVariableState;
 import enums.InstanceVariableType;
+import enums.LogicType;
 import enums.OperatorType;
 import enums.PlaceholderVariableType;
 import enums.Priority;
@@ -16,8 +17,10 @@ import propositions.AuxillaryOperator;
 import propositions.CompoundProposition;
 import propositions.InstanceVariable;
 import propositions.Operator;
+import propositions.PredicatedProposition;
 import propositions.Proposition;
 import propositions.Quantifier;
+import propositions.RelationalProposition;
 import universeComponents.Relation;
 import universeComponents.Universe;
 import universeComponents.World;
@@ -201,13 +204,16 @@ public class TernaryTree {
 			
 		}
 		
-		if (highestPriorityNode.getProposition() instanceof CompoundProposition) {
+		if (highestPriorityNode.getProposition().getType().equals("compound")) {
 			
 			CompoundProposition compoundProp = ((CompoundProposition) highestPriorityNode.getProposition());
 			compoundProp.setIsExpanded(true);
 			
 			CompoundProposition copiedCompoundProp = (CompoundProposition)compoundProp.copy();
 			CompoundProposition duplicateCopiedCompoundProp = (CompoundProposition)compoundProp.copy();
+			
+			//copiedCompoundProp.assignVariablesForAll();
+			//duplicateCopiedCompoundProp.assignVariablesForAll();
 			
 			Operator operator = copiedCompoundProp.getOperator();
 			AuxillaryOperator auxOp = copiedCompoundProp.getAuxOps().get(0);
@@ -278,12 +284,52 @@ public class TernaryTree {
 			}else {
 				// something went wrong with auxOp
 			}
-		}else {
+		}else if (highestPriorityNode.getProposition().getType().equals("predicated")) {
+			PredicatedProposition predicatedProp = (PredicatedProposition) highestPriorityNode.getProposition();
+			predicatedProp.setIsExpanded(true);
 			
+			PredicatedProposition copiedpredicatedProp = predicatedProp.copy();
+			//copiedpredicatedProp.assignVariablesForAll();
+			
+			AuxillaryOperator auxOp = copiedpredicatedProp.getAuxOps().get(0);
+			
+			AuxillaryOperatorType auxOpType = auxOp.getAuxOpType();
+			if (auxOp.isClassical()) {
+				
+			}else if (auxOp.isModal()) {
+				expandForModal(parentWorld, copiedpredicatedProp, auxOpType);
+			}else if (auxOp.isPredicate()) {
+				expandForPredicate(parentWorld, copiedpredicatedProp, auxOp);
+			}else {
+				// something went wrong with auxOp
+			}
+			
+			
+		}else if (highestPriorityNode.getProposition().getType().equals("relational")) {
+			RelationalProposition relationalProp = (RelationalProposition) highestPriorityNode.getProposition();
+			relationalProp.setIsExpanded(true);
+			
+			RelationalProposition copiedRelationalProp = relationalProp.copy();
+			//copiedRelationalProp.assignVariablesForAll();
+			
+			AuxillaryOperator auxOp = copiedRelationalProp.getAuxOps().get(0);
+			
+			AuxillaryOperatorType auxOpType = auxOp.getAuxOpType();
+			if (auxOp.isClassical()) {
+				
+			}else if (auxOp.isModal()) {
+				expandForModal(parentWorld, copiedRelationalProp, auxOpType);
+			}else if (auxOp.isPredicate()) {
+				expandForPredicate(parentWorld, copiedRelationalProp, auxOp);
+			}else {
+				// something went wrong with auxOp
+			}
+			
+		}else {
 			AtomicProposition atomicProp = ((AtomicProposition) highestPriorityNode.getProposition());
 			atomicProp.setIsExpanded(true);
 			
-			AtomicProposition copiedAtomicProp = (AtomicProposition)atomicProp.copy();
+			AtomicProposition copiedAtomicProp = atomicProp.copy();
 
 			AuxillaryOperator auxOp = copiedAtomicProp.getAuxOps().get(0);
 			
@@ -353,6 +399,7 @@ public class TernaryTree {
 		if (auxOpType == AuxillaryOperatorType.EXISTENTIAL || auxOpType == AuxillaryOperatorType.NOTUNIVERSAL) {
 			
 			instantiateNewVariable(existingInstantiatedVars, quantifier, parentWorld.getParentUniverse());
+			copiedProp.removeRelevantAuxOp();
 			for (TernaryNode emptyNode : emptyNodesDownStream) {
 				emptyNode.laneNode(copiedProp);
 			}
@@ -360,24 +407,27 @@ public class TernaryTree {
 		}else if (auxOpType == AuxillaryOperatorType.UNIVERSAL || auxOpType == AuxillaryOperatorType.NOTEXISTENTIAL) {
 			if (instantiatedExists) {
 				for (TernaryNode emptyNode : emptyNodesDownStream) {
-					//for(InstanceVariable var : instanceVars) {
-						//emptyNode.laneNode(proposition);
-					//}
+					for (int i = 0; i < existingInstantiatedVars.size(); i ++) {
+						PredicatedProposition copyForInstantiation = (PredicatedProposition) copiedProp.copy();
+						for (Map.Entry<UUID, InstanceVariable> entry : copyForInstantiation.getQuantifier().getAppliesTo().entrySet()) {
+							UUID predicateId = entry.getKey();
+							InstanceVariable instanceVar = entry.getValue();
+							instanceVar.setVariable(existingInstantiatedVars.get(i));
+						}
+						copyForInstantiation.removeRelevantAuxOp();
+						TernaryNode nodeToLane = emptyNode.getEmptyCenterNode();
+						nodeToLane.laneNode(copyForInstantiation);
+					}
 				}
 			}else {
 
 				instantiateNewVariable(existingInstantiatedVars, quantifier, parentWorld.getParentUniverse());
+				copiedProp.removeRelevantAuxOp();
 				for (TernaryNode emptyNode : emptyNodesDownStream) {
-					//copiedProp.set
-					copiedProp.removeRelevantAuxOp();
-
 					emptyNode.laneNode(copiedProp);
 				}
 			}
-			
-		}
-		
-		
+		}	
 	}
 	
 	public void instantiateNewVariable(ArrayList<InstanceVariableType> existingInstantiatedVars, Quantifier quantifier, Universe universe) {
@@ -388,8 +438,6 @@ public class TernaryTree {
 			instanceVar.setVariable(InstanceVariableType.values()[rotation]);
 			universe.getInstantiatedVariables().add(instanceVar);
 		}
-		
-
 	}
 }
 

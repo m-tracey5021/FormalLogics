@@ -483,20 +483,20 @@ public class PropositionBuilder implements EventHandler<ActionEvent> {
 		
 		
 		if (singlePropToAdd != null) {
-			ArrayList<Proposition> allPredicates = singlePropToAdd.initAllPredicateProps();
-			for (Proposition pred : allPredicates) {
-				pred.startAssignment();
+			if (logicType == LogicType.PREDICATE) {
+				singlePropToAdd.assignVariablesForAll();
+				//singlePropToAdd.assignAuxOps();
 			}
-			singlePropToAdd.assignAuxOps();
+			
 			return singlePropToAdd;
 
 
 		}else if (compoundToAdd != null) {
-			ArrayList<Proposition> allPredicates = compoundToAdd.initAllPredicateProps();
-			for (Proposition pred : allPredicates) {
-				pred.startAssignment();
+			if (logicType == LogicType.PREDICATE) {
+				compoundToAdd.assignVariablesForAll();
+				//compoundToAdd.assignAuxOps();
 			}
-			compoundToAdd.assignAuxOps();
+			
 			return compoundToAdd;
 
 

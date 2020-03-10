@@ -109,6 +109,8 @@ public class TernaryNode {
 	
 	// =============== RECURSIVE GET FUNCTIONS
 	
+	
+	
 	public void getAllNodes(ArrayList<TernaryNode> allNodes) {
 		allNodes.add(this);
 		if (this.leftNode == null & this.rightNode == null & this.centerNode == null) {
@@ -233,6 +235,15 @@ public class TernaryNode {
 		}else {
 			return null;
 		}
+	}
+	
+	public TernaryNode getEmptyCenterNode() {
+		if (this.centerNode != null) {
+			return this.centerNode.getEmptyCenterNode();
+		}else {
+			return this;
+		}
+		
 	}
 	
 	

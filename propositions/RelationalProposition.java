@@ -87,6 +87,7 @@ public class RelationalProposition extends Proposition{
 		InstanceVariable secondInternalVariable = secondInstanceVariable;
 		if (externalVariable.getPlaceholder() == secondInternalVariable.getPlaceholder()) {
 			comparedQuantifier.getAppliesTo().put(this.getId(), secondInternalVariable);
+			//comparedQuantifier.getRelationalPropositions().add(this);
 			secondQuantifier = comparedQuantifier;
 			
 			
@@ -137,16 +138,17 @@ public class RelationalProposition extends Proposition{
 			AuxillaryOperator copiedAuxOp = auxOp.copy();
 			copiedAuxOps.add(copiedAuxOp);
 		}
-		RelationalProposition copiedRelational;
+		RelationalProposition copiedRelational = new RelationalProposition(copiedAuxOps, null, null, firstInstanceVariable.copy(), secondInstanceVariable.copy());
 		
+		/*
 		Quantifier firstCopiedQuantifier;
 		InstanceVariable firstVarToAssign;
 		
 		Quantifier secondCopiedQuantifier;
 		InstanceVariable secondVarToAssign;
+		*/
 		
-		
-		
+		/*
 		if (firstQuantifier == null & secondQuantifier != null) {
 			secondCopiedQuantifier = secondQuantifier.copy();
 			secondVarToAssign = secondCopiedQuantifier.getAppliesTo().get(this.getId());
@@ -180,7 +182,9 @@ public class RelationalProposition extends Proposition{
 			secondCopiedQuantifier.getAppliesTo().remove(this.getId());
 			secondCopiedQuantifier.getAppliesTo().put(copiedRelational.getId(), secondVarToAssign);
 		}
-
+		*/
+		
+		copiedRelational.assignVariablesForAll();
 		return copiedRelational;
 
 	}

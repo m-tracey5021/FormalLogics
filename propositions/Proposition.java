@@ -199,7 +199,12 @@ public class Proposition {
 		
 	}
 	
-	
+	public void assignVariablesForAll() {
+		ArrayList<Proposition> allPredicates = initAllPredicateProps();
+		for (Proposition pred : allPredicates) {
+			pred.startAssignment();
+		}
+	}
 	
 
 	// ================ OVERRIDEN METHODS

@@ -143,7 +143,8 @@ public class LogicEvaluatorWindow {
 			if (controller.getStoredProp() != null) {
 				Proposition returnedProp = controller.getStoredProp();
 				System.out.println("");
-				returnedProp = returnedProp.copy();
+				//returnedProp = returnedProp.copy();
+				//returnedProp.startAssignment();
 				propositions.add(returnedProp);
 				Label newPropLabel = new Label(returnedProp.toString());
 				propositionList.getChildren().addAll(newPropLabel);
@@ -512,10 +513,7 @@ public class LogicEvaluatorWindow {
 					JsonNode propositionObject = propsArr.get(i);
 					String propositionString = propositionObject.toString();
 					Proposition importedProp = propDeserializer.deserialize(propositionString);
-					ArrayList<Proposition> allPredicates = importedProp.initAllPredicateProps();
-					for (Proposition pred : allPredicates) {
-						pred.startAssignment();
-					}
+					importedProp.assignVariablesForAll();
 					importedProps.add(importedProp);
 				}
 			}

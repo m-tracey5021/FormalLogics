@@ -15,18 +15,35 @@ public class Quantifier extends AuxillaryOperator {
 	private InstanceVariable instanceVariable;
 	@JsonIgnore
 	private HashMap<UUID, InstanceVariable> appliesTo;
+	@JsonIgnore
+	private ArrayList<PredicatedProposition> predicatedPropositions;
+	@JsonIgnore
+	private ArrayList<RelationalProposition> relationalPropositions;
 	
 	
 	public Quantifier(AuxillaryOperatorType auxOpType, InstanceVariable instanceVariable) {
 		super(auxOpType);
 		this.instanceVariable = instanceVariable;
 		this.appliesTo = new HashMap<UUID, InstanceVariable>();
+		this.predicatedPropositions = new ArrayList<PredicatedProposition>();
+		this.relationalPropositions = new ArrayList<RelationalProposition>();
 	}
 	
 	public Quantifier(AuxillaryOperatorType auxOpType, InstanceVariable instanceVariable, HashMap<UUID, InstanceVariable> appliesTo) {
 		super(auxOpType);
 		this.instanceVariable = instanceVariable;
 		this.appliesTo = appliesTo;
+	}
+	
+	public Quantifier(AuxillaryOperatorType auxOpType, 
+			InstanceVariable instanceVariable, 
+			ArrayList<PredicatedProposition> predicatedPropositions, 
+			ArrayList<RelationalProposition> relationalPropositions) {
+		super(auxOpType);
+		this.instanceVariable = instanceVariable;
+		this.appliesTo = new HashMap<UUID, InstanceVariable>();
+		this.predicatedPropositions = predicatedPropositions;
+		this.relationalPropositions = relationalPropositions;
 	}
 	
 	// ============ GET
@@ -39,6 +56,14 @@ public class Quantifier extends AuxillaryOperator {
 	
 	public HashMap<UUID, InstanceVariable> getAppliesTo(){
 		return this.appliesTo;
+	}
+	
+	public ArrayList<PredicatedProposition> getPredicatedPropositions(){
+		return this.predicatedPropositions;
+	}
+	
+	public ArrayList<RelationalProposition> getRelationalPropositions(){
+		return this.relationalPropositions;
 	}
 	
 	// ============= SET
@@ -83,7 +108,7 @@ public class Quantifier extends AuxillaryOperator {
 		}
 	}
 	
-	
+	/*
 	@Override
 	public Quantifier copy() {
 		HashMap<UUID, InstanceVariable> copiedAppliesTo = new HashMap<UUID, InstanceVariable>();
@@ -104,5 +129,17 @@ public class Quantifier extends AuxillaryOperator {
 		}
 		
 	}
+	*/
+	
+	@Override
+	public Quantifier copy() {
+		if (instanceVariable != null) {
+			return new Quantifier(super.getAuxOpType(), instanceVariable.copy());
+		}else {
+			return new Quantifier(super.getAuxOpType(), null);
+		}
+	}
+	
+	
 	
 }

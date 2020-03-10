@@ -63,6 +63,7 @@ public class PredicatedProposition extends Proposition {
 			
 			
 			comparedQuantifier.getAppliesTo().put(this.getId(), instanceVariable);
+			//comparedQuantifier.getPredicatedPropositions().add(this);
 			quantifier = comparedQuantifier;
 
 			return true;
@@ -120,27 +121,26 @@ public class PredicatedProposition extends Proposition {
 		if (quantifier == null) {
 			copiedPredicatedProp = new PredicatedProposition(copiedAuxOps, null, predicate, instanceVariable.copy());
 		}else {
-			//InstanceVariable newVar = instanceVariable.copy();
-			//Quantifier newQuantifier = quantifier.copy();
-			//newQuantifier.updateApplicableVariables(instanceVariable, newVar);
-			//quantifier.updateApplicableVariables(instanceVariable, newVar);
-			//copiedPredicatedProp = new PredicatedProposition(copiedAuxOps, quantifier, predicate, newVar);
+
 			
-			Quantifier copiedQuantifier = quantifier.copy();
-			//quantifier = copiedQuantifier;
-			quantifier.getParentProposition().replaceAuxOp(quantifier, copiedQuantifier);
+			//Quantifier copiedQuantifier = quantifier.copy();
+
+			//quantifier.getParentProposition().replaceAuxOp(quantifier, copiedQuantifier);
 			
-			InstanceVariable instanceVarToAssign = copiedQuantifier.getAppliesTo().get(this.getId());
+			//InstanceVariable instanceVarToAssign = copiedQuantifier.getAppliesTo().get(this.getId());
 			
 			
 			
 			
-			copiedPredicatedProp = new PredicatedProposition(copiedAuxOps, copiedQuantifier, predicate, instanceVarToAssign);
-			copiedQuantifier.getAppliesTo().remove(this.getId());
-			copiedQuantifier.getAppliesTo().put(copiedPredicatedProp.getId(), instanceVarToAssign);
+			copiedPredicatedProp = new PredicatedProposition(copiedAuxOps, null, predicate, instanceVariable.copy());
+			//copiedPredicatedProp.startAssignment();
+
+			//copiedQuantifier.getAppliesTo().remove(this.getId());
+			//copiedQuantifier.getAppliesTo().put(copiedPredicatedProp.getId(), instanceVarToAssign);
 			
 			//copiedPredicatedProp.getQuantifier().getAppliesTo().add(copiedPredicatedProp.getInstanceVariable());
 		}
+		copiedPredicatedProp.assignVariablesForAll();
 		
 		
 		return copiedPredicatedProp;

@@ -66,15 +66,15 @@ public class CompoundProposition extends Proposition {
 	@Override
 	public void getPredicateProps(ArrayList<Proposition> propositions){
 		if (this.getFirstOperand() != null) {
-			if (this.getFirstOperand().getType().equals("relational") || this.getFirstOperand().getType().equals("predicated")) {
-				propositions.add(this.getFirstOperand());
-			}
+			//if (this.getFirstOperand().getType().equals("relational") || this.getFirstOperand().getType().equals("predicated")) {
+			//	propositions.add(this.getFirstOperand());
+			//}
 			this.getFirstOperand().getPredicateProps(propositions);
 		}
 		if (this.getSecondOperand() != null) {
-			if (this.getSecondOperand().getType().equals("relational") || this.getSecondOperand().getType().equals("predicated")) {
-				propositions.add(this.getSecondOperand());
-			}
+			//if (this.getSecondOperand().getType().equals("relational") || this.getSecondOperand().getType().equals("predicated")) {
+			//	propositions.add(this.getSecondOperand());
+			//}
 			this.getSecondOperand().getPredicateProps(propositions);
 		}
 	}
@@ -90,7 +90,11 @@ public class CompoundProposition extends Proposition {
 				}
 			}
 		}
-		super.getParentProp().assignVariables(predicate);
+		if (super.getParentProp() != null) {
+			super.getParentProp().assignVariables(predicate);
+		}else {
+			return;
+		}
 	}
 	
 	@Override
@@ -153,6 +157,7 @@ public class CompoundProposition extends Proposition {
 			pred.startAssignment();
 		}
 		*/
+		copiedCompoundProp.assignVariablesForAll();
 		return copiedCompoundProp;
 	}
 
