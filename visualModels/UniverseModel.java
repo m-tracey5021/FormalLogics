@@ -9,8 +9,6 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
-import math.PointSlopeForm;
-import math.SlopeInterceptForm;
 import universeComponents.Relation;
 import universeComponents.Universe;
 import universeComponents.World;
