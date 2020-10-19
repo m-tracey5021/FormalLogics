@@ -1,9 +1,0 @@
-
-.treeModelView {
-	-fx-background-color: #0099cc;
-	-fx-background-radius: 2;
-	-fx-border-colour: #0d0d0d; 
-	-fx-border-width: 10;
-	-fx-background-insets: 2, 2, 2, 2;
-	-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 2.5, 0, 0, 0);
-}
