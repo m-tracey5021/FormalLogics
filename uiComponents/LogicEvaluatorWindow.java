@@ -1,6 +1,9 @@
 package uiComponents;
 
 import java.util.*;
+
+import org.controlsfx.control.CheckComboBox;
+
 import com.google.gson.*;
 import com.fasterxml.*;
 import com.fasterxml.jackson.*;
@@ -26,6 +29,9 @@ import java.nio.file.Paths;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.event.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -51,9 +57,11 @@ public class LogicEvaluatorWindow {
 	private Stage window;
 	private Scene scene;
 	private GridPane grid;
-	private Label logicTypeLabel, modelLabel;
-	private VBox logicTypeVBox, lockButtonsVBox, propositionList;
+	private Label logicTypeLabel, modelLabel, propertiesLabel, validityLabel;
+	private VBox logicTypeVBox, lockButtonsVBox;// propositionList;
 	private HBox selectionHBox, importOrCreatePropositions, saveOrClearPropositions;
+	private ListView<Proposition> propositionList;
+	private CheckComboBox<String> universeProperties;
 	private ScrollPane scroll;
 	private Pane modelPane;
 	private StackPane modelPaneCenter;
@@ -64,10 +72,17 @@ public class LogicEvaluatorWindow {
 	private ArrayList<PropositionContainer> containers; // put the propositions in here so that can sort out Ids
 	private LogicType logicType;
 	private WindowController controller;
+	private boolean reflexivity, transitivity, symmetry, hereditary, resetProperties;
 
 
 	
 	public LogicEvaluatorWindow() {
+		
+		reflexivity = false;
+		transitivity = false;
+		symmetry = false;
+		hereditary = false;
+		resetProperties = false;
 		
 		controller = new WindowController();
 		
@@ -89,6 +104,14 @@ public class LogicEvaluatorWindow {
 		modelLabel = new Label("Model");
 		GridPane.setConstraints(modelLabel, 1, 0, 1, 1, HPos.CENTER, VPos.CENTER);
 		
+		propertiesLabel = new Label("Properties:");
+		propertiesLabel.relocate(10, 10);
+		propertiesLabel.setDisable(true);
+		
+		validityLabel = new Label("Model is valid");
+		validityLabel.relocate(10, 610);
+		
+		
 		// ========== BUTTONS
 		
 		lockLogicType = new Button("Lock selection");
@@ -108,28 +131,15 @@ public class LogicEvaluatorWindow {
 		unlockLogicType = new Button("Unlock selection");
 		unlockLogicType.setPrefWidth(130);
 		unlockLogicType.setOnAction(e -> {
-
-			ConfirmationModal confirm = new ConfirmationModal("All current propositions will be lost", controller);
-			if (controller.getBoolRet() == true) {
-				lockLogicType.setDisable(false);
-				classicalRb.setDisable(false);
-				predicateRb.setDisable(false);
-				modalRb.setDisable(false);
-				
-				unlockLogicType.setDisable(true);
-				createNewProp.setDisable(true);
-				importPropositions.setDisable(true);
-				generateModel.setDisable(true);
-				savePropositions.setDisable(true);
-				clearPropositions.setDisable(true);
-				
-				propositions = new ArrayList<Proposition>();
-				propositionList.getChildren().clear();
-				
-				modelPane = new Pane();
-				modelPane.setPrefSize(400, 400);
-				scroll.setContent(modelPane);
+			if (propositions.size() != 0) {
+				ConfirmationModal confirm = new ConfirmationModal("All current propositions will be lost", controller);
+				if (controller.getBoolRet() == true) {
+					unlockLogicType();
+				}
+			}else {
+				unlockLogicType();
 			}
+			
 			
 			
 		});
@@ -147,7 +157,8 @@ public class LogicEvaluatorWindow {
 				//returnedProp.startAssignment();
 				propositions.add(returnedProp);
 				Label newPropLabel = new Label(returnedProp.toString());
-				propositionList.getChildren().addAll(newPropLabel);
+				//propositionList.getChildren().addAll(newPropLabel);
+				updateListView();
 				generateModel.setDisable(false);
 				savePropositions.setDisable(false);
 				clearPropositions.setDisable(false);
@@ -202,13 +213,14 @@ public class LogicEvaluatorWindow {
 		clearPropositions.setPrefWidth(180);
 		clearPropositions.setOnAction(e -> {
 			propositions = new ArrayList<Proposition>();
-			propositionList.getChildren().clear();
+			//propositionList.getChildren().clear();
+			updateListView();
 			generateModel.setDisable(true);
 			savePropositions.setDisable(true);
 			clearPropositions.setDisable(true);
 			resetModel.setDisable(true);
-			modelPane = new Pane();
-			scroll.setContent(modelPane);
+			resetProperties = true;
+			resetModel();
 		});
 		clearPropositions.setDisable(true);
 
@@ -223,72 +235,115 @@ public class LogicEvaluatorWindow {
 		resetModel = new Button("Reset model");
 		resetModel.setOnAction(e -> {
 			resetModel.setDisable(true);
-			modelPane = new Pane();
-			scroll.setContent(modelPane);
+			resetProperties = true;
+			resetModel();
 		});
 		resetModel.setDisable(true);
 		GridPane.setConstraints(resetModel, 1, 8, 1, 1, HPos.CENTER, VPos.CENTER);
 		
 		// ========== RADIO BUTTONS
 		
-				logicTypeGroup = new ToggleGroup();
-				logicTypeGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
-					public void changed(ObservableValue<? extends Toggle> observed, Toggle oldVal, Toggle newVal) {
-						if (logicTypeGroup.getSelectedToggle() == classicalRb) {
-							logicType = LogicType.CLASSICAL;
-						} else if (logicTypeGroup.getSelectedToggle() == predicateRb) {
-							logicType = LogicType.PREDICATE;
-						} else if (logicTypeGroup.getSelectedToggle() == modalRb) {
-							logicType = LogicType.MODAL;
-						} else {
-							System.out.println("Some error");
-						}
-					}
-				});
+		logicTypeGroup = new ToggleGroup();
+		logicTypeGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
+			public void changed(ObservableValue<? extends Toggle> observed, Toggle oldVal, Toggle newVal) {
+				if (logicTypeGroup.getSelectedToggle() == classicalRb) {
+					logicType = LogicType.CLASSICAL;
+				} else if (logicTypeGroup.getSelectedToggle() == predicateRb) {
+					logicType = LogicType.PREDICATE;
+				} else if (logicTypeGroup.getSelectedToggle() == modalRb) {
+					logicType = LogicType.MODAL;
+				} else {
+					System.out.println("Some error");
+				}
+			}
+		});
 
-				
-				classicalRb = new RadioButton("Classical");
-				classicalRb.setPrefHeight(20);
-				classicalRb.setSelected(true);
-				classicalRb.setToggleGroup(logicTypeGroup);
-				
-				predicateRb = new RadioButton("Predicate");
-				predicateRb.setPrefHeight(20);
-				predicateRb.setToggleGroup(logicTypeGroup);
-				
-				modalRb = new RadioButton("Modal");
-				modalRb.setPrefHeight(20);
-				modalRb.setToggleGroup(logicTypeGroup);// ========== RADIO BUTTONS
-				
-				logicTypeGroup = new ToggleGroup();
-				logicTypeGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
-					public void changed(ObservableValue<? extends Toggle> observed, Toggle oldVal, Toggle newVal) {
-						if (logicTypeGroup.getSelectedToggle() == classicalRb) {
-							logicType = LogicType.CLASSICAL;
-						} else if (logicTypeGroup.getSelectedToggle() == predicateRb) {
-							logicType = LogicType.PREDICATE;
-						} else if (logicTypeGroup.getSelectedToggle() == modalRb) {
-							logicType = LogicType.MODAL;
-						} else {
-							System.out.println("Some error");
-						}
-					}
-				});
-
-				
-				classicalRb = new RadioButton("Classical");
-				classicalRb.setPrefHeight(20);
-				classicalRb.setSelected(true);
-				classicalRb.setToggleGroup(logicTypeGroup);
-				
-				predicateRb = new RadioButton("Predicate");
-				predicateRb.setPrefHeight(20);
-				predicateRb.setToggleGroup(logicTypeGroup);
-				
-				modalRb = new RadioButton("Modal");
-				modalRb.setPrefHeight(20);
-				modalRb.setToggleGroup(logicTypeGroup);
 		
+		classicalRb = new RadioButton("Classical");
+		classicalRb.setPrefHeight(20);
+		classicalRb.setSelected(true);
+		classicalRb.setToggleGroup(logicTypeGroup);
+		
+		predicateRb = new RadioButton("Predicate");
+		predicateRb.setPrefHeight(20);
+		predicateRb.setToggleGroup(logicTypeGroup);
+		
+		modalRb = new RadioButton("Modal");
+		modalRb.setPrefHeight(20);
+		modalRb.setToggleGroup(logicTypeGroup);// ========== RADIO BUTTONS
+		
+		logicTypeGroup = new ToggleGroup();
+		logicTypeGroup.selectedToggleProperty().addListener(new ChangeListener<Toggle>() {
+			public void changed(ObservableValue<? extends Toggle> observed, Toggle oldVal, Toggle newVal) {
+				if (logicTypeGroup.getSelectedToggle() == classicalRb) {
+					logicType = LogicType.CLASSICAL;
+				} else if (logicTypeGroup.getSelectedToggle() == predicateRb) {
+					logicType = LogicType.PREDICATE;
+				} else if (logicTypeGroup.getSelectedToggle() == modalRb) {
+					logicType = LogicType.MODAL;
+				} else {
+					System.out.println("Some error");
+				}
+			}
+		});
+
+		
+		classicalRb = new RadioButton("Classical");
+		classicalRb.setPrefHeight(20);
+		classicalRb.setSelected(true);
+		classicalRb.setToggleGroup(logicTypeGroup);
+		
+		predicateRb = new RadioButton("Predicate");
+		predicateRb.setPrefHeight(20);
+		predicateRb.setToggleGroup(logicTypeGroup);
+		
+		modalRb = new RadioButton("Modal");
+		modalRb.setPrefHeight(20);
+		modalRb.setToggleGroup(logicTypeGroup);
+				
+		// ====================== CHECK COMBO BOXES
+		
+		
+
+		
+		ObservableList<String> properties = FXCollections.observableArrayList("Reflexive", "Transitive", "Symmetric");
+		universeProperties = new CheckComboBox<String>(properties);
+		universeProperties.setPrefWidth(220);
+		universeProperties.getCheckModel().getCheckedItems().addListener(new ListChangeListener<String>() {
+		     public void onChanged(ListChangeListener.Change<? extends String> c) {
+		         System.out.println(universeProperties.getCheckModel().getCheckedItems());
+		         if (universeProperties.getCheckModel().getCheckedItems().contains("Reflexive")) {
+		        	 reflexivity = true;
+		         }else {
+		        	 reflexivity = false;
+		         }
+		         if (universeProperties.getCheckModel().getCheckedItems().contains("Transitive")) {
+		        	 transitivity = true;
+		         }else {
+		        	 transitivity = false;
+		         }
+		         if (universeProperties.getCheckModel().getCheckedItems().contains("Symmetric")) {
+		        	 symmetry = true;
+		         }else {
+		        	 symmetry = false;
+		         }
+		         if (!resetProperties) {
+		        	 generateModel();
+		         }
+		         
+		     }
+		});
+		universeProperties.relocate(10, 30);
+		universeProperties.setDisable(true);
+		
+		// ================== LIST VIEWS
+				
+		propositionList = new ListView<Proposition>();
+		propositionList.setMouseTransparent(true);
+		propositionList.setFocusTraversable(false);
+		GridPane.setConstraints(propositionList, 0, 5, 1, 1);
+		updateListView();
+				
 		// ========== H AND V BOXES
 		
 		logicTypeVBox = new VBox(7.5);
@@ -303,12 +358,14 @@ public class LogicEvaluatorWindow {
 		selectionHBox.getChildren().addAll(logicTypeVBox, lockButtonsVBox);
 		GridPane.setConstraints(selectionHBox, 0, 2, 1, 1, HPos.CENTER, VPos.CENTER);
 		
+		
+		/*
 		propositionList = new VBox();
 		propositionList.setPrefSize(400, 150);
 		propositionList.setAlignment(Pos.CENTER);
 		propositionList.getStyleClass().add("");
 		GridPane.setConstraints(propositionList, 0, 5, 1, 1);
-		
+		*/
 		
 		importOrCreatePropositions = new HBox(20);
 		importOrCreatePropositions.setAlignment(Pos.CENTER);
@@ -323,11 +380,12 @@ public class LogicEvaluatorWindow {
 		// ========== PANES
 		
 		modelPane = new Pane();
-		modelPane.setPrefSize(4000, 4000);
+		modelPane.setPrefSize(400, 600);
+		modelPane.getChildren().addAll(propertiesLabel, universeProperties);
 
 		
 		scroll = new ScrollPane();
-		scroll.setPrefSize(400, 400);
+		scroll.setPrefSize(400, 600);
 		scroll.setContent(modelPane);
 		scroll.setVbarPolicy(ScrollBarPolicy.NEVER);
 		scroll.setHbarPolicy(ScrollBarPolicy.NEVER);
@@ -364,39 +422,55 @@ public class LogicEvaluatorWindow {
 	// ============== MODEL GENERATION
 	
 	public void generateModel() {
+		resetProperties = false;
+		resetPropositions();
+		resetModel();
+		
 		if (logicType == LogicType.CLASSICAL) {
-			modelPane.getChildren().clear();
+			//modelPane.getChildren().clear();
 			TernaryNode treeStart = setupInitialTree();
 			TernaryTree rootNode = new TernaryTree(treeStart);
 			
 			rootNode.expandWithinWorld(null);
 			
+			
 			rootNode.generateTreeModel();
 			TernaryTreeModel treeModel = rootNode.getTreeModel();
 			
-			double widthOfTree = treeModel.getTreeWidth();
-			double heightOfTree = treeModel.getTreeHeight();
 			
-			TreeModelView treeModelView = new TreeModelView(treeModel, 50, 50, false);
+			double padding = 50;
+			
+			TreeModelView treeModelView = new TreeModelView(treeModel, padding, padding, false);
+			
+			boolean validity = rootNode.isValid();
+			displayValidity(validity);
+			
+			double modelWidth = treeModelView.getModelViewWidth();
+			double modelHeight = treeModelView.getModelViewHeight();
 
-			// STILL NEED TO CHANGE VIEWPORT
+			double[] translations = getTranslationsToCenter(modelWidth, modelHeight);
 			
 			
 			
-			scroll.setContent(treeModelView);
-			scroll.setVmax(treeModelView.getPrefHeight());
-			scroll.setHmax(treeModelView.getPrefWidth());
+			
+			treeModelView.relocate(translations[0], translations[1]);
+			modelPane.getChildren().add(treeModelView);
+			
+			scroll.setContent(modelPane);
 
-	        scroll.setVvalue(treeModelView.getPrefHeight() / 2);
-	        scroll.setHvalue(treeModelView.getPrefWidth() / 2);
 			resetModel.setDisable(false);
 
 		}else if (logicType == LogicType.MODAL) {
-			modelPane.getChildren().clear();
+			//modelPane.getChildren().clear();
+			propertiesLabel.setDisable(false);
+			universeProperties.setDisable(false);
 			TernaryNode treeStart = setupInitialTree();
 			TernaryTree rootNode = new TernaryTree(treeStart);
-			Universe rootUniverse = new Universe(false, false, false, false, true);
+			Universe rootUniverse = new Universe(reflexivity, transitivity, symmetry, hereditary, true);
 			World rootWorld = new World(rootUniverse, rootNode);
+			if (rootUniverse.getUniverseProperties()[0]) {
+				rootUniverse.addReflexiveRelation(rootWorld);
+			}
 			rootWorld.expandWithinUniverse();
 			
 			
@@ -404,6 +478,23 @@ public class LogicEvaluatorWindow {
 			
 			rootUniverse.generateUniverseModel();
 			UniverseModel universeModel = rootUniverse.getUniverseModel();
+			
+			
+			int validTreeCount = 0;
+			for(World world : rootUniverse.getWorlds()) {
+				boolean treeValidity = world.getTernaryTree().isValid();
+				if (treeValidity) {
+					validTreeCount ++;
+				}
+			}
+			if (validTreeCount == rootUniverse.getWorlds().size()) {
+				displayValidity(true);
+			}else {
+				displayValidity(false);
+			}
+			
+			
+			/*
 			double modelWidth = universeModel.getUniverseWidth();
 			double modelHeight = universeModel.getUniverseHeight();
 			
@@ -420,46 +511,50 @@ public class LogicEvaluatorWindow {
 				modelPane.setPrefHeight(modelHeight + 40);
 				translateY = (modelHeight + 40) / 2;
 			}else {
-				translateY = 200;
+				translateY = 300;
 			}
+			*/
 
 			
-			universeModel.relocateUniverse(translateX, translateY);
+			universeModel.relocateUniverse(200, 300);
 			universeModel.drawUniverse(window, scene, modelPane);
 			
 			scroll.setContent(modelPane);
 			resetModel.setDisable(false);
 		}else if (logicType == LogicType.PREDICATE) {
-			modelPane.getChildren().clear();
+			//modelPane.getChildren().clear();
 			TernaryNode treeStart = setupInitialTree();
 			TernaryTree rootNode = new TernaryTree(treeStart);
-			Universe rootUniverse = new Universe(false, false, false, false, true);
-			World rootWorld = new World(rootUniverse, rootNode);
-			rootWorld.expandWithinUniverse();
+			//Universe rootUniverse = new Universe(false, false, false, false, true);
+			//World rootWorld = new World(rootUniverse, rootNode);
+			//rootWorld.expandWithinUniverse();
 			
-			//rootNode.expandWithinWorld(null);
+			rootNode.expandWithinWorld(null);
 			
 			rootNode.generateTreeModel();
 			TernaryTreeModel treeModel = rootNode.getTreeModel();
 			
-			double widthOfTree = treeModel.getTreeWidth();
-			double heightOfTree = treeModel.getTreeHeight();
+			boolean validity = rootNode.isValid();
+			displayValidity(validity);
+			
+			double modelWidth = treeModel.getTreeWidth();
+			double modelHeight = treeModel.getTreeHeight();
 			
 			TreeModelView treeModelView = new TreeModelView(treeModel, 50, 50, false);
 
-			// STILL NEED TO CHANGE VIEWPORT
-			
-			
-			
-			scroll.setContent(treeModelView);
-			scroll.setVmax(treeModelView.getPrefHeight());
-			scroll.setHmax(treeModelView.getPrefWidth());
+			double[] translations = getTranslationsToCenter(modelWidth, modelHeight);
 
-	        scroll.setVvalue(treeModelView.getPrefHeight() / 2);
-	        scroll.setHvalue(treeModelView.getPrefWidth() / 2);
+			treeModelView.relocate(translations[0], translations[1]);
+			
+			modelPane.getChildren().add(treeModelView);
+			
+			scroll.setContent(modelPane);
+
 			resetModel.setDisable(false);
 		}
 	}
+	
+	// =============== UTIL
 	
 	public TernaryNode setupInitialTree() {
 		ArrayList<TernaryNode> initialNodes = new ArrayList<TernaryNode>();
@@ -472,6 +567,96 @@ public class LogicEvaluatorWindow {
 		
 		return nodeToChain.getTreeStart();
 	}
+	
+	public void resetPropositions() {
+		ArrayList<Proposition> newProps = new ArrayList<Proposition>();
+		for (Proposition prop : propositions) {
+			Proposition newProp = prop.copy();
+			newProps.add(newProp);
+			
+		}
+		propositions = newProps;
+	}
+	
+	public void unlockLogicType() {
+		lockLogicType.setDisable(false);
+		classicalRb.setDisable(false);
+		predicateRb.setDisable(false);
+		modalRb.setDisable(false);
+		
+		unlockLogicType.setDisable(true);
+		createNewProp.setDisable(true);
+		importPropositions.setDisable(true);
+		generateModel.setDisable(true);
+		savePropositions.setDisable(true);
+		clearPropositions.setDisable(true);
+		
+		propositions = new ArrayList<Proposition>();
+		
+		resetProperties = true;
+		resetModel();
+		updateListView();
+		
+	}
+	
+	public double[] getTranslationsToCenter(double childNodeWidth, double childNodeHeight) {
+		double translateX, translateY;
+		if (childNodeWidth > 400) {
+			modelPane.setPrefWidth(childNodeWidth + 40);
+			scroll.applyCss();
+			scroll.layout();
+			scroll.setHmax(childNodeWidth + 40);
+			scroll.setHvalue((childNodeWidth + 40) / 2);
+			translateX = 20;
+		}else {
+			modelPane.setPrefWidth(400);
+			translateX = 200 - (childNodeWidth / 2);
+
+		}
+		
+		if (childNodeHeight > 400) {
+			modelPane.setPrefHeight(childNodeHeight + 40);
+			translateY = 50;
+		}else {
+			modelPane.setPrefHeight(400);
+			translateY = 50;
+		}
+		return new double[] {translateX, translateY};
+	}
+	
+	public void updateListView() {
+		propositionList.getItems().clear();
+
+		ObservableList<Proposition> observableProps = FXCollections.observableArrayList();
+		for (Proposition prop : propositions) {
+			observableProps.add(prop);
+		}
+		propositionList.setItems(observableProps);
+	}
+	
+	public void resetModel() {
+		modelPane.getChildren().clear();
+		modelPane.setPrefSize(400, 400); 
+		modelPane.getChildren().addAll(propertiesLabel, universeProperties);
+		if (resetProperties) {
+			universeProperties.getCheckModel().clearChecks();
+			universeProperties.setDisable(true);
+			propertiesLabel.setDisable(true);
+		}
+		
+		scroll.setContent(modelPane);
+	}
+	
+	public void displayValidity(boolean valid) {
+		if (valid) {
+			validityLabel.setText("Model is valid");
+		}else {
+			validityLabel.setText("Model is not valid");
+		}
+		modelPane.getChildren().add(validityLabel);
+	}
+	
+	
 	
 	
 	// ================ SERIALIZATION
@@ -495,6 +680,9 @@ public class LogicEvaluatorWindow {
 	}
 	
 	public PropositionContainer deserializePropositions(String jsonStr) { 
+		if (jsonStr == "") {
+			return null;
+		}
 		ObjectMapper mapper = new ObjectMapper();
 		PropositionDeserializer propDeserializer = new PropositionDeserializer();
 		
@@ -574,10 +762,11 @@ public class LogicEvaluatorWindow {
 	
 	public void addImportedProps(PropositionContainer importedPropsContainer) {
 		propositions = importedPropsContainer.getPropositions();
-		propositionList.getChildren().clear();
-		for (Proposition importedProp : importedPropsContainer.getPropositions()) {
-			propositionList.getChildren().add(new Label(importedProp.toString()));
-		}
+		//propositionList.getChildren().clear();
+		//for (Proposition importedProp : importedPropsContainer.getPropositions()) {
+		//	propositionList.getChildren().add(new Label(importedProp.toString()));
+		//}
+		updateListView();
 		generateModel.setDisable(false);
 		savePropositions.setDisable(false);
 		clearPropositions.setDisable(false);

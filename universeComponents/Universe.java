@@ -1,6 +1,7 @@
 package universeComponents;
 import java.util.ArrayList;
 
+import enums.InstanceVariableType;
 import javafx.geometry.Point2D;
 import propositions.InstanceVariable;
 import visualModels.RelationModel;
@@ -11,16 +12,14 @@ import visualModels.WorldModel;
 public class Universe {
 	private ArrayList<World> worlds;
 	private ArrayList<Relation> relations;
-	private ArrayList<InstanceVariable> instantiatedVariables;
+	private ArrayList<InstanceVariableType> instantiatedVariableTypes;
 	private boolean reflex;
 	private boolean trans;
 	private boolean symm;
 	private boolean hereditary;
 	private UniverseModel universeModel;
 	private boolean popupUniverse;
-	//private Point2D points;
-	//private ArrayList<WorldModel> worldModels;
-	//private ArrayList<RelationModel> relationModels;
+
 	
 	public Universe() {
 		this.worlds = new ArrayList<World>();
@@ -28,7 +27,7 @@ public class Universe {
 	public Universe(boolean reflex, boolean trans, boolean symm, boolean hereditary, boolean popupUniverse) {
 		this.worlds = new ArrayList<World>();
 		this.relations = new ArrayList<Relation>();
-		this.instantiatedVariables = new ArrayList<InstanceVariable>();
+		this.instantiatedVariableTypes = new ArrayList<InstanceVariableType>();
 		this.reflex = reflex;
 		this.trans = trans;
 		this.symm = symm;
@@ -46,8 +45,8 @@ public class Universe {
 		return this.relations;
 	}
 	
-	public ArrayList<InstanceVariable> getInstantiatedVariables(){
-		return this.instantiatedVariables;
+	public ArrayList<InstanceVariableType> getInstantiatedVariables(){
+		return this.instantiatedVariableTypes;
 	}
 	
 	public boolean[] getUniverseProperties() {
@@ -89,17 +88,175 @@ public class Universe {
 		
 	}
 	
-	public void adjustRelationsForReflexivity() {
+	public void updateRelationsForNewWorld(World oldWorld, World newWorld) {
+		if (reflex) {
+			addReflexiveRelation(newWorld);
+		}
+		if (trans) {
+			addTransitiveRelation(oldWorld, newWorld);
+		}
+		if (symm) {
+			addSymmetricRelation(oldWorld, newWorld);
+		}else {
+			addSimpleRelation(oldWorld, newWorld);
+		}
+
 		
 	}
 	
-	public void adjustRelationsForTransitivity() {
+	// ============= ADD RELATION TYPES
+	
+	public void addReflexiveRelation(World newWorld) {
+		relations.add(new Relation(newWorld, newWorld));
+	}
+	
+	
+	/*
+	 * this adds the same world multiple times which is a bug VVV
+	 */
+	
+	public void addTransitiveRelation(World oldWorld, World newWorld) {
+		/*
+		ArrayList<Relation> relationsForOldWorld = getRelationsByWorld(oldWorld);
+		for (Relation relation : relationsForOldWorld) {
+			if (relation.getSecondWorld() == oldWorld) {
+				relations.add(new Relation(relation.getFirstWorld(), newWorld));
+				if (symm) {
+					relations.add(new Relation(newWorld, relation.getFirstWorld()));
+				}
+			}
+		}
 		
+		*/
+		for (World relatesToOld : getRelatingWorlds(oldWorld)) {
+			relations.add(new Relation(relatesToOld, newWorld));
+			if (symm) {
+				relations.add(new Relation(newWorld, relatesToOld));
+			}
+		}
+	}
+	
+	public void addSymmetricRelation(World oldWorld, World newWorld) {
+		relations.add(new Relation(oldWorld, newWorld));
+		relations.add(new Relation(newWorld, oldWorld));
+	}
+	
+	public void addSimpleRelation(World oldWorld, World newWorld) {
+		relations.add(new Relation(oldWorld, newWorld));
+	}
+	
+	
+	// ========== ADJUST UNIVERSE FOR PROPERTIES
+	
+	
+	public void adjustRelationsForReflexivity() {
+		ArrayList<Relation> newRelationsToAdd = new ArrayList<Relation>();
+		for (World world : worlds) {
+			
+			boolean reflexiveRelationExists = false;
+			ArrayList<Relation> relationsForWorld = getRelationsByWorld(world);
+
+			for (Relation relation : relationsForWorld) {
+				if(relation instanceof ReflexiveRelation) {
+					reflexiveRelationExists = true;
+				}
+			}
+			
+			if (!reflexiveRelationExists) {
+				newRelationsToAdd.add(new ReflexiveRelation(world));
+			}
+			
+		}
+		relations.addAll(newRelationsToAdd);
+	}
+	
+	/*
+	 * transitivity method needs to be updated
+	 * to apply to all worlds down the chain? do
+	 * it recursively? if no related worlds return
+	 */
+	
+	public void adjustRelationsForTransitivity() { 
+		
+		
+		/*
+		ArrayList<Relation> newRelationsToAdd = new ArrayList<Relation>();
+		for (Relation relation : relations) {
+			World firstWorld = relation.getFirstWorld();
+			ArrayList<World> worldsRelatedToSecond = getRelatedWorlds(relation.getSecondWorld());
+			for (World thirdWorld : worldsRelatedToSecond) {
+				newRelationsToAdd.add(new Relation(firstWorld, thirdWorld));
+			}
+		}
+		relations.addAll(newRelationsToAdd);
+		*/
+		
+		ArrayList<Relation> newRelationsToAdd = new ArrayList<Relation>();
+		for (Relation firstRelation : relations) {
+			if (!(firstRelation instanceof TransitiveRelation)) {
+				World relatedWorld = firstRelation.getSecondWorld();
+				for (Relation comparedRelation : relations) {
+					if (comparedRelation.getFirstWorld() == relatedWorld) {
+						newRelationsToAdd.add(new TransitiveRelation(firstRelation.getFirstWorld(), comparedRelation.getSecondWorld(), comparedRelation.getFirstWorld()));
+					}
+				}
+			}
+			
+		}
+		relations.addAll(newRelationsToAdd);
 	}
 	
 	public void adjustRelationsForSymmetry() {
+		/*
+		ArrayList<Relation> newRelationsToAdd = new ArrayList<Relation>();
+		for(Relation relation : relations) {
+			World firstWorld = relation.getFirstWorld();
+			World secondWorld = relation.getSecondWorld();
+			newRelationsToAdd.add(new Relation(secondWorld, firstWorld));
+		}
+		*/
 		
+
+		
+		for (int i = 0; i < relations.size(); i ++) {
+			Relation relation = relations.get(i);
+			if (!(relation instanceof ReflexiveRelation) && !(relation instanceof SymmetricRelation)) {
+				relations.remove(relation);
+				relations.add(i, new SymmetricRelation(relation.getFirstWorld(), relation.getSecondWorld()));
+			}
+		}
+		
+		
+		/*
+		
+		
+		for (World world : worlds) {
+			boolean symmetricRelationExists = false;
+			ArrayList<Relation> relationsForWorld = getRelationsByWorld(world);
+			
+			for (int i = 0; i < relationsForWorld.size(); i ++) {
+				Relation relationForWorld = relationsForWorld.get(i);
+				if (!(relationForWorld instanceof ReflexiveRelation) && !(relationForWorld instanceof SymmetricRelation)) {
+					relations.remove(relationForWorld);
+					relations.add(new SymmetricRelation(relationForWorld.getFirstWorld(), relationForWorld.getSecondWorld()));
+				}
+				
+				
+			}
+			
+			if (!symmetricRelationExists) {
+				
+			}
+		}
+		
+		
+		relations.addAll(newRelationsToAdd);
+		*/
 	}
+	
+	
+	// =============== GET RELATIONS AND WORLDS
+	
 	
 	public ArrayList<World> getRelatedWorlds(World chosenWorld){ // returns worlds that are pointed towards by the chosen world
 		ArrayList<World> relatedWorlds = new ArrayList<World>();
@@ -108,6 +265,8 @@ public class Universe {
 				relatedWorlds.add(relation.getSecondWorld());
 			}
 		}
+		
+		
 		return relatedWorlds;
 	}
 	
@@ -120,6 +279,19 @@ public class Universe {
 		}
 		return relatingWorlds;
 	}
+	
+	public ArrayList<Relation> getRelationsByWorld(World chosenWorld){ // returns all relations in which chosen world is involved
+		ArrayList<Relation> relationsForWorld = new ArrayList<Relation>();
+		for (Relation relation : relations) {
+			if (relation.getFirstWorld() == chosenWorld || relation.getSecondWorld() == chosenWorld) {
+				relationsForWorld.add(relation);
+			}
+		}
+		return relationsForWorld;
+	}
+	
+	
+	// ==================
 	
 	
 	public void generateUniverseModel() {
@@ -153,7 +325,12 @@ public class Universe {
 		}
 		
 		for (int i = 0; i < relations.size(); i ++) {
-			relations.get(i).generateRelationModel();
+			Relation relation = relations.get(i);
+			if (relation.getFirstWorld() == relation.getSecondWorld()) {
+				relation.generateRelationModel(true);
+			}else {
+				relation.generateRelationModel(false);
+			}
 			relationModels.add(relations.get(i).getRelationModel());
 		}
 		

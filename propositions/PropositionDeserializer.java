@@ -62,7 +62,7 @@ public class PropositionDeserializer {
 				
 				
 				CompoundProposition compoundProp = new CompoundProposition(firstOperand, secondOperand, operator, auxOps);
-				compoundProp.assignAuxOps();
+				//compoundProp.assignAuxOps();
 				firstOperand.setParentProp(compoundProp);
 				secondOperand.setParentProp(compoundProp);
 				 return compoundProp;
@@ -72,10 +72,10 @@ public class PropositionDeserializer {
 				//AtomicProposition atomicProp = new AtomicProposition(auxOps, variableName);  this is for old variable structure with string
 				
 				String varStr = rootNode.get("variable").get("variable").asText();
-				String trimmedStr = varStr.substring(1, varStr.length() - 1);
-				PropositionalVariable variable = getPropositionalVariableValue(trimmedStr);
+				//String trimmedStr = varStr.substring(1, varStr.length() - 1);
+				PropositionalVariable variable = getPropositionalVariableValue(varStr);
 				AtomicProposition atomicProp = new AtomicProposition(auxOps, variable);
-				atomicProp.assignAuxOps();
+				//atomicProp.assignAuxOps();
 				return atomicProp;
 			}else if (type.equals("predicated")){
 				
@@ -88,7 +88,7 @@ public class PropositionDeserializer {
 				InstanceVariable instanceVar = getInstanceVariableValue(trimmedVarStr);
 
 				PredicatedProposition predicatedprop = new PredicatedProposition(auxOps, null, trimmedPredicate, instanceVar);
-				predicatedprop.assignAuxOps();
+				//predicatedprop.assignAuxOps();
 				return predicatedprop;
 				// throw exception
 			}else if (type.equals("relational")) {
@@ -103,7 +103,7 @@ public class PropositionDeserializer {
 				InstanceVariable secondInstanceVar = getInstanceVariableValue(secondTrimmedVarStr);
 				
 				RelationalProposition relationalProp = new RelationalProposition(auxOps, null, null, firstInstanceVar, secondInstanceVar);
-				relationalProp.assignAuxOps();
+				//relationalProp.assignAuxOps();
 				return relationalProp;
 			}else {
 				return new Proposition();
@@ -157,23 +157,29 @@ public class PropositionDeserializer {
 	}
 	
 	public PropositionalVariable getPropositionalVariableValue(String varStr) {
-		if (varStr.equals("p")) {
+		if (varStr.equals("P")) {
 			return new PropositionalVariable(PropositionalVariableType.P);
-		}else if (varStr.equals("q")) {
+		}else if (varStr.equals("Q")) {
 			return new PropositionalVariable(PropositionalVariableType.Q);
-		}else if (varStr.equals("r")) {
+		}else if (varStr.equals("R")) {
 			return new PropositionalVariable(PropositionalVariableType.R);
-		}else if (varStr.equals("s")) {
+		}else if (varStr.equals("S")) {
 			return new PropositionalVariable(PropositionalVariableType.S);
-		}else if (varStr.equals("t")){
+		}else if (varStr.equals("T")){
 			return new PropositionalVariable(PropositionalVariableType.T);
+		}else if (varStr.equals("U")){
+			return new PropositionalVariable(PropositionalVariableType.U);
+		}else if (varStr.equals("V")){
+			return new PropositionalVariable(PropositionalVariableType.V);
 		}else {
 			return null;
 		}
 	}
 	
 	public InstanceVariable getInstanceVariableValue(String varStr) {
-		if (varStr.equals("X")) {
+		if (varStr.equals("W")) {
+			return new InstanceVariable(PlaceholderVariableType.W);
+		}else if (varStr.equals("X")){
 			return new InstanceVariable(PlaceholderVariableType.X);
 		}else if (varStr.equals("Y")) {
 			return new InstanceVariable(PlaceholderVariableType.Y);

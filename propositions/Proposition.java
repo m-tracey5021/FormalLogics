@@ -225,11 +225,11 @@ public class Proposition {
 		return;
 	}
 	
-	public void assignAuxOps() {
-		for (AuxillaryOperator auxOp : auxOps) {
-			auxOp.setParentProposition(this);
-		}
-	}
+	//public void assignAuxOps() {
+	//	for (AuxillaryOperator auxOp : auxOps) {
+	//		auxOp.setParentProposition(this);
+	//	}
+	//}
 	
 	public void replaceAuxOp(AuxillaryOperator oldAuxOp, AuxillaryOperator newAuxOp) {
 		int index = auxOps.indexOf(oldAuxOp);
@@ -241,7 +241,200 @@ public class Proposition {
 		return null;
 	}
 	
+	public boolean auxOpsAreContradictory(ArrayList<AuxillaryOperator> otherAuxOps) {
+		
+		
+		int thisSize = auxOps.size();
+		int otherSize = otherAuxOps.size();
+		
+		if (thisSize == 1 & otherSize == 1) {
+			if (auxOps.get(0).getAuxOpType() == AuxillaryOperatorType.NEGATION) {
+				if (otherAuxOps.get(0).getAuxOpType() == AuxillaryOperatorType.NONE) {
+					return true;
+				}
+			}
+			
+			if (otherAuxOps.get(0).getAuxOpType() == AuxillaryOperatorType.NEGATION) {
+				if (auxOps.get(0).getAuxOpType() == AuxillaryOperatorType.NONE) {
+					return true;
+				}
+			}
+		}
+		
+		if (thisSize > otherSize & thisSize - otherSize == 1) {
+			if (auxOps.get(0).getAuxOpType() == AuxillaryOperatorType.NEGATION) {
+				for (int i = 0; i < thisSize; i ++) {
+					AuxillaryOperator auxOp = auxOps.get(i + 1);
+					AuxillaryOperator otherAuxOp = otherAuxOps.get(i);
+					if (auxOp.getAuxOpType() != otherAuxOp.getAuxOpType()) {
+						return false;
+					}
+				}
+				return true;
+			}else {
+				return false;
+			}
+		}else if (thisSize < otherSize & otherSize - thisSize == 1){
+			if (otherAuxOps.get(0).getAuxOpType() == AuxillaryOperatorType.NEGATION) {
+				for (int i = 0; i < otherSize; i ++) {
+					AuxillaryOperator auxOp = auxOps.get(i);
+					AuxillaryOperator otherAuxOp = otherAuxOps.get(i + 1);
+					if (auxOp.getAuxOpType() != otherAuxOp.getAuxOpType()) {
+						return false;
+					}
+				}
+				return true;
+			}else {
+				return false;
+			}
+		}else {
+			return false;
+		}
+		
+		
+		
+		/*
+		int diff = thisSize - otherSize;
+		if (diff == 1 | diff == -1) {
+			
+		}else {
+			return false;
+		}
+		*/
+	}
+	
+	public boolean auxOpsAreEqual(ArrayList<AuxillaryOperator> otherAuxOps) {
+		if (auxOps.size() != otherAuxOps.size()) {
+			return false;
+		}else {
+			for (int i = 0; i < auxOps.size(); i ++) {
+				AuxillaryOperator auxOp = auxOps.get(i);
+				AuxillaryOperator otherAuxOp = otherAuxOps.get(i);
+				if (auxOp.getAuxOpType() != otherAuxOp.getAuxOpType()) {
+					return false;
+				}
+			}
+			return true;
+		}
+		
+	}
+	
 	public boolean isEqualTo(Proposition other) {
-		return false;
+		if (this instanceof CompoundProposition & other instanceof CompoundProposition) {
+			CompoundProposition thisProp = (CompoundProposition) this;
+			CompoundProposition otherProp = (CompoundProposition) other;
+			if (thisProp.getFirstOperand().isEqualTo(otherProp.getFirstOperand()) & 
+					thisProp.getSecondOperand().isEqualTo(otherProp.getSecondOperand())) {
+				if (auxOpsAreEqual(otherProp.getAuxOps())) {
+					return true;
+				}else {
+					return false; 
+				}
+			}else {
+				return false;
+			}
+		}else if (this instanceof PredicatedProposition & other instanceof PredicatedProposition) {
+			PredicatedProposition thisProp = (PredicatedProposition) this;
+			PredicatedProposition otherProp = (PredicatedProposition) other;
+			if (thisProp.getInstanceVariable().getVariable() == otherProp.getInstanceVariable().getVariable() & 
+					thisProp.getPredicate().equals(otherProp.getPredicate())) {
+				if (auxOpsAreEqual(otherProp.getAuxOps())) {
+					return true;
+				}else {
+					return false; 
+				}
+			}else {
+				return false;
+			}
+		}else if (this instanceof RelationalProposition & other instanceof RelationalProposition) {
+			RelationalProposition thisProp = (RelationalProposition) this;
+			RelationalProposition otherProp = (RelationalProposition) other;
+			if (thisProp.getFirstInstanceVariable().getVariable() == otherProp.getFirstInstanceVariable().getVariable() & 
+					thisProp.getSecondInstanceVariable().getVariable() == otherProp.getSecondInstanceVariable().getVariable()) {
+				if (auxOpsAreEqual(otherProp.getAuxOps())) {
+					return true;
+				}else {
+					return false;
+				}
+			}else {
+				return false;
+			}
+				
+			
+		}else if (this instanceof AtomicProposition & other instanceof AtomicProposition) {
+			AtomicProposition thisProp = (AtomicProposition) this;
+			AtomicProposition otherProp = (AtomicProposition) other;
+			if (thisProp.getVariable().getVariable() == otherProp.getVariable().getVariable()) {
+				if (auxOpsAreEqual(otherProp.getAuxOps())) {
+					return true;
+				}else {
+					return false;
+				}
+			}else {
+				return false;
+			}
+		}else {
+			return false;
+		}
+	}
+	
+	
+	public boolean isContradictory(Proposition other) {
+		if (this instanceof CompoundProposition & other instanceof CompoundProposition) {
+			CompoundProposition thisProp = (CompoundProposition) this;
+			CompoundProposition otherProp = (CompoundProposition) other;
+			if (thisProp.getFirstOperand().isContradictory(otherProp.getFirstOperand()) & 
+					thisProp.getSecondOperand().isContradictory(otherProp.getSecondOperand())) {
+				if (auxOpsAreContradictory(otherProp.getAuxOps())) {
+					return true;
+				}else {
+					return false; 
+				}
+			}else {
+				return false;
+			}
+		}else if (this instanceof PredicatedProposition & other instanceof PredicatedProposition) {
+			PredicatedProposition thisProp = (PredicatedProposition) this;
+			PredicatedProposition otherProp = (PredicatedProposition) other;
+			if (thisProp.getInstanceVariable().getVariable() == otherProp.getInstanceVariable().getVariable() & 
+					thisProp.getPredicate().equals(otherProp.getPredicate())) {
+				if (auxOpsAreContradictory(otherProp.getAuxOps())) {
+					return true;
+				}else {
+					return false; 
+				}
+			}else {
+				return false;
+			}
+		}else if (this instanceof RelationalProposition & other instanceof RelationalProposition) {
+			RelationalProposition thisProp = (RelationalProposition) this;
+			RelationalProposition otherProp = (RelationalProposition) other;
+			if (thisProp.getFirstInstanceVariable().getVariable() == otherProp.getFirstInstanceVariable().getVariable() & 
+					thisProp.getSecondInstanceVariable().getVariable() == otherProp.getSecondInstanceVariable().getVariable()) {
+				if (auxOpsAreContradictory(otherProp.getAuxOps())) {
+					return true;
+				}else {
+					return false;
+				}
+			}else {
+				return false;
+			}
+				
+			
+		}else if (this instanceof AtomicProposition & other instanceof AtomicProposition) {
+			AtomicProposition thisProp = (AtomicProposition) this;
+			AtomicProposition otherProp = (AtomicProposition) other;
+			if (thisProp.getVariable().getVariable() == otherProp.getVariable().getVariable()) {
+				if (auxOpsAreContradictory(otherProp.getAuxOps())) {
+					return true;
+				}else {
+					return false;
+				}
+			}else {
+				return false;
+			}
+		}else {
+			return false;
+		}
 	}
 }

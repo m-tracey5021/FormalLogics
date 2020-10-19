@@ -14,7 +14,7 @@ import enums.AuxillaryOperatorType;
 public class Quantifier extends AuxillaryOperator {
 	private InstanceVariable instanceVariable;
 	@JsonIgnore
-	private HashMap<UUID, InstanceVariable> appliesTo;
+	private HashMap<UUID, ArrayList<InstanceVariable>> appliesTo;
 	@JsonIgnore
 	private ArrayList<PredicatedProposition> predicatedPropositions;
 	@JsonIgnore
@@ -24,12 +24,12 @@ public class Quantifier extends AuxillaryOperator {
 	public Quantifier(AuxillaryOperatorType auxOpType, InstanceVariable instanceVariable) {
 		super(auxOpType);
 		this.instanceVariable = instanceVariable;
-		this.appliesTo = new HashMap<UUID, InstanceVariable>();
+		this.appliesTo = new HashMap<UUID, ArrayList<InstanceVariable>>();
 		this.predicatedPropositions = new ArrayList<PredicatedProposition>();
 		this.relationalPropositions = new ArrayList<RelationalProposition>();
 	}
 	
-	public Quantifier(AuxillaryOperatorType auxOpType, InstanceVariable instanceVariable, HashMap<UUID, InstanceVariable> appliesTo) {
+	public Quantifier(AuxillaryOperatorType auxOpType, InstanceVariable instanceVariable, HashMap<UUID, ArrayList<InstanceVariable>> appliesTo) {
 		super(auxOpType);
 		this.instanceVariable = instanceVariable;
 		this.appliesTo = appliesTo;
@@ -41,7 +41,7 @@ public class Quantifier extends AuxillaryOperator {
 			ArrayList<RelationalProposition> relationalPropositions) {
 		super(auxOpType);
 		this.instanceVariable = instanceVariable;
-		this.appliesTo = new HashMap<UUID, InstanceVariable>();
+		this.appliesTo = new HashMap<UUID, ArrayList<InstanceVariable>>();
 		this.predicatedPropositions = predicatedPropositions;
 		this.relationalPropositions = relationalPropositions;
 	}
@@ -54,7 +54,7 @@ public class Quantifier extends AuxillaryOperator {
 		return this.instanceVariable;
 	}
 	
-	public HashMap<UUID, InstanceVariable> getAppliesTo(){
+	public HashMap<UUID, ArrayList<InstanceVariable>> getAppliesTo(){
 		return this.appliesTo;
 	}
 	
@@ -74,7 +74,7 @@ public class Quantifier extends AuxillaryOperator {
 		this.instanceVariable = instanceVariable;
 	}
 	
-	public void setAppliesTo(HashMap<UUID, InstanceVariable> appliesTo) {
+	public void setAppliesTo(HashMap<UUID, ArrayList<InstanceVariable>> appliesTo) {
 		this.appliesTo = appliesTo;
 	}
 	

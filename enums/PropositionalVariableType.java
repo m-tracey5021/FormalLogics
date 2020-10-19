@@ -7,6 +7,5 @@ public enum PropositionalVariableType {
 	S,
 	T,
 	U,
-	V,
-	W
+	V
 }

@@ -8,8 +8,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import enums.AuxillaryOperatorType;
 
 public class AuxillaryOperator {
-	@JsonIgnore
-	private Proposition parentProposition;
+	//@JsonIgnore
+	//private Proposition parentProposition;
 	private AuxillaryOperatorType auxillaryOperatorType;
 	
 	public AuxillaryOperator() {
@@ -22,9 +22,9 @@ public class AuxillaryOperator {
 	
 	// ============ GET
 	
-	public Proposition getParentProposition() {
-		return this.parentProposition;
-	}
+	//public Proposition getParentProposition() {
+	//	return this.parentProposition;
+	//}
 	
 	public AuxillaryOperatorType getAuxOpType() {
 		return this.auxillaryOperatorType;
@@ -32,9 +32,9 @@ public class AuxillaryOperator {
 	
 	// ========== SET
 	
-	public void setParentProposition(Proposition parentProposition) {
-		this.parentProposition = parentProposition;
-	}
+	//public void setParentProposition(Proposition parentProposition) {
+	//	this.parentProposition = parentProposition;
+	//}
 	
 	public void setAuxOp(AuxillaryOperatorType auxillaryOperator) {
 		this.auxillaryOperatorType = auxillaryOperator;
@@ -82,7 +82,6 @@ public class AuxillaryOperator {
 	
 	public AuxillaryOperator copy() {
 		AuxillaryOperator copiedAuxOp = new AuxillaryOperator(auxillaryOperatorType);
-		copiedAuxOp.setParentProposition(parentProposition);
 		return copiedAuxOp;
 	}
 	

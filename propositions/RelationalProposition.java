@@ -1,6 +1,9 @@
 package propositions;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -64,17 +67,15 @@ public class RelationalProposition extends Proposition{
 		InstanceVariable externalVariable = comparedQuantifier.getInstanceVariable();
 		InstanceVariable firstInternalVariable = firstInstanceVariable;
 		if (externalVariable.getPlaceholder() == firstInternalVariable.getPlaceholder()) {
-			comparedQuantifier.getAppliesTo().put(this.getId(), firstInternalVariable);
-			firstQuantifier = comparedQuantifier;
-			/*
-			if (comparedQuantifier.getParentContainer() != null) {
-				comparedQuantifier.getParentContainer().getApplicableInstanceVariables().add(firstInternalVariable);
+			ArrayList<InstanceVariable> entry = comparedQuantifier.getAppliesTo().get(this.getId());
+			if (entry == null) {
+				comparedQuantifier.getAppliesTo().put(this.getId(), new ArrayList<InstanceVariable>(Arrays.asList(firstInternalVariable)));
 			}else {
-				QuantifierContainer newContainer = new QuantifierContainer();
-				newContainer.getApplicableInstanceVariables().add(firstInternalVariable);
-				comparedQuantifier.setParentContainer(newContainer);
+				entry.add(firstInternalVariable);
 			}
-			*/
+			
+			firstQuantifier = comparedQuantifier;
+	
 			return true;
 		}else {
 			return false;
@@ -86,8 +87,13 @@ public class RelationalProposition extends Proposition{
 		InstanceVariable externalVariable = comparedQuantifier.getInstanceVariable();
 		InstanceVariable secondInternalVariable = secondInstanceVariable;
 		if (externalVariable.getPlaceholder() == secondInternalVariable.getPlaceholder()) {
-			comparedQuantifier.getAppliesTo().put(this.getId(), secondInternalVariable);
-			//comparedQuantifier.getRelationalPropositions().add(this);
+			ArrayList<InstanceVariable> entry = comparedQuantifier.getAppliesTo().get(this.getId());
+			if (entry == null) {
+				comparedQuantifier.getAppliesTo().put(this.getId(), new ArrayList<InstanceVariable>(Arrays.asList(secondInternalVariable)));
+			}else {
+				entry.add(secondInternalVariable);
+			}
+		
 			secondQuantifier = comparedQuantifier;
 			
 			
@@ -140,50 +146,7 @@ public class RelationalProposition extends Proposition{
 		}
 		RelationalProposition copiedRelational = new RelationalProposition(copiedAuxOps, null, null, firstInstanceVariable.copy(), secondInstanceVariable.copy());
 		
-		/*
-		Quantifier firstCopiedQuantifier;
-		InstanceVariable firstVarToAssign;
-		
-		Quantifier secondCopiedQuantifier;
-		InstanceVariable secondVarToAssign;
-		*/
-		
-		/*
-		if (firstQuantifier == null & secondQuantifier != null) {
-			secondCopiedQuantifier = secondQuantifier.copy();
-			secondVarToAssign = secondCopiedQuantifier.getAppliesTo().get(this.getId());
-			copiedRelational = new RelationalProposition(copiedAuxOps, null, secondCopiedQuantifier, firstInstanceVariable.copy(), secondVarToAssign);
-			
-			secondCopiedQuantifier.getParentProposition().replaceAuxOp(secondCopiedQuantifier, secondQuantifier);
-			secondCopiedQuantifier.getAppliesTo().remove(this.getId());
-			secondCopiedQuantifier.getAppliesTo().put(copiedRelational.getId(), secondVarToAssign);
-		}else if (firstQuantifier != null & secondQuantifier == null) {
-			firstCopiedQuantifier = firstQuantifier.copy();
-			firstVarToAssign = firstCopiedQuantifier.getAppliesTo().get(this.getId());
-			copiedRelational = new RelationalProposition(copiedAuxOps, firstCopiedQuantifier, null, firstVarToAssign, secondInstanceVariable.copy());
-			
-			firstCopiedQuantifier.getParentProposition().replaceAuxOp(firstCopiedQuantifier, firstQuantifier);
-			firstCopiedQuantifier.getAppliesTo().remove(this.getId());
-			firstCopiedQuantifier.getAppliesTo().put(copiedRelational.getId(), firstVarToAssign);
-		}else if (firstQuantifier == null & secondQuantifier == null){
-			copiedRelational = new RelationalProposition(copiedAuxOps, null, null, firstInstanceVariable.copy(), secondInstanceVariable.copy());
-		}else {
-			firstCopiedQuantifier = firstQuantifier.copy();
-			firstVarToAssign = firstCopiedQuantifier.getAppliesTo().get(this.getId());
-			secondCopiedQuantifier = secondQuantifier.copy();
-			secondVarToAssign = secondCopiedQuantifier.getAppliesTo().get(this.getId());
-			copiedRelational = new RelationalProposition(copiedAuxOps, firstCopiedQuantifier, secondCopiedQuantifier, firstVarToAssign, secondVarToAssign);
-			
-			firstCopiedQuantifier.getParentProposition().replaceAuxOp(firstQuantifier, firstCopiedQuantifier);
-			firstCopiedQuantifier.getAppliesTo().remove(this.getId());
-			firstCopiedQuantifier.getAppliesTo().put(copiedRelational.getId(), firstVarToAssign);
-			
-			secondCopiedQuantifier.getParentProposition().replaceAuxOp(secondCopiedQuantifier, secondQuantifier);
-			secondCopiedQuantifier.getAppliesTo().remove(this.getId());
-			secondCopiedQuantifier.getAppliesTo().put(copiedRelational.getId(), secondVarToAssign);
-		}
-		*/
-		
+	
 		copiedRelational.assignVariablesForAll();
 		return copiedRelational;
 

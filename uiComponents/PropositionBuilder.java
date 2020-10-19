@@ -137,7 +137,6 @@ public class PropositionBuilder implements EventHandler<ActionEvent> {
 		operatorLabel.setAlignment(Pos.CENTER);
 		operatorLabel.setPrefWidth(100);
 		GridPane.setConstraints(operatorLabel, 0, 2);
-		//GridPane.setMargin(operatorLabel, new Insets(40, 0, 0, 0));
 		
 		
 		currentPropositionLabel = new Label("Current proposition");
@@ -213,7 +212,7 @@ public class PropositionBuilder implements EventHandler<ActionEvent> {
 			}
 		});
 		GridPane.setConstraints(operatorChoice, 3, 2, 1, 1, HPos.CENTER, VPos.CENTER);
-		//GridPane.setMargin(operatorChoice, new Insets(40, 0, 0, 0));
+
 		
 		// ============= SPINNERS
 		
@@ -225,19 +224,6 @@ public class PropositionBuilder implements EventHandler<ActionEvent> {
 			propTypes = FXCollections.observableArrayList("Atomic", "Predicated", "Relational", "Custom");
 		}
 		
-		/*
-		SpinnerValueFactory<String> factory1 = new SpinnerValueFactory<String>() {
-			@Override
-			public void decrement(int steps) {
-				String currentSelection = this.getValue();
-			}
-			
-			@Override
-			public void increment(int steps) {
-				String currentSelection = this.getValue();
-			}
-		};
-		*/
 		
 		spinner1 = new Spinner<String>();
 		spinner1.setValueFactory(new SpinnerValueFactory.ListSpinnerValueFactory<String>(propTypes));
@@ -256,7 +242,7 @@ public class PropositionBuilder implements EventHandler<ActionEvent> {
 				}
 			}
 		});
-		spinner1.getStyleClass().add("Spinner.STYLE_CLASS_SPLIT_ARROWS_HORIZONTAL");
+		spinner1.getStyleClass().add(Spinner.STYLE_CLASS_SPLIT_ARROWS_HORIZONTAL);
 
 		
 		
@@ -277,61 +263,14 @@ public class PropositionBuilder implements EventHandler<ActionEvent> {
 				}
 			}
 		});
-		spinner2.getStyleClass().add("Spinner.STYLE_CLASS_SPLIT_ARROWS_HORIZONTAL");
+		spinner2.getStyleClass().add(Spinner.STYLE_CLASS_SPLIT_ARROWS_HORIZONTAL);
+		
 		
 		GridPane.setConstraints(spinner1, 2, 1, 1, 1, HPos.CENTER, VPos.CENTER);
 		GridPane.setConstraints(spinner2, 2, 3, 1, 1, HPos.CENTER, VPos.CENTER);
 		
 		// ====== BUTTONS
-		
-		
-		/*
-		
-		ToggleButton b1 = new ToggleButton("Atomic");
-		b1.setOnAction(e -> {
-			firstOperandChoice.getItems().clear();
-			firstOperandChoice.getItems().addAll(firstAtomicPropositions);
-		});
-		ToggleButton b2 = new ToggleButton("Predicate");
-		b2.setOnAction(e -> {
-			firstOperandChoice.getItems().clear();
-			firstOperandChoice.getItems().addAll(firstPredicatePropositions);
-		});
-		ToggleButton b3 = new ToggleButton("Custom");
-		b3.setOnAction(e -> {
-			firstOperandChoice.getItems().clear();
-			firstOperandChoice.getItems().addAll(firstCustomPropositions);
-		});
-		
-		
-		
-		
-		ToggleButton b4 = new ToggleButton("Atomic");
-		b4.setOnAction(e -> {
-			secondOperandChoice.getItems().clear();
-			secondOperandChoice.getItems().addAll(secondAtomicPropositions);
-		});
-		ToggleButton b5 = new ToggleButton("Predicate");
-		b5.setOnAction(e -> {
-			secondOperandChoice.getItems().clear();
-			secondOperandChoice.getItems().addAll(secondPredicatePropositions);
-		});
-		ToggleButton b6 = new ToggleButton("Custom");
-		b6.setOnAction(e -> {
-			secondOperandChoice.getItems().clear();
-			secondOperandChoice.getItems().addAll(secondCustomPropositions);
-		});
-		
-		if (logicType == LogicType.CLASSICAL || logicType == LogicType.MODAL) {
-			propositionType1 = new SegmentedButton(b1, b3);
-			propositionType2 = new SegmentedButton(b4, b6);
-		}else {
-			propositionType1 = new SegmentedButton(b1, b2, b3);
-			propositionType2 = new SegmentedButton(b4, b5, b6);
-		}
-		
-		*/
-		
+	
 		
 		
 
@@ -346,8 +285,7 @@ public class PropositionBuilder implements EventHandler<ActionEvent> {
 			
 		});
 		GridPane.setConstraints(addMainAuxOps, 1, 2);
-		//GridPane.setMargin(addMainAuxOps, new Insets(40, 0, 0, 0));
-		
+	
 		addAuxOpToFirst = new Button("+");
 		addAuxOpToFirst.setTooltip(new Tooltip("Add axuillary operators to first operand"));
 		addAuxOpToFirst.setOnAction(e -> {
@@ -385,7 +323,7 @@ public class PropositionBuilder implements EventHandler<ActionEvent> {
 		addToCustomOperands.setOnAction(e -> {
 			addPropToLists();
 		});
-		//GridPane.setConstraints(addToPropLists, 3, 1, 1, 1, HPos.CENTER, VPos.CENTER);
+		
 		
 		clearAll = new Button("Clear all");
 		clearAll.setPrefWidth(180);
@@ -528,6 +466,8 @@ public class PropositionBuilder implements EventHandler<ActionEvent> {
 			mainAuxOps = null;
 			firstAuxOps = null;
 			secondAuxOps = null;
+			
+			
 
 			
 			clearUi();
@@ -557,8 +497,7 @@ public class PropositionBuilder implements EventHandler<ActionEvent> {
 				new AtomicProposition(null, new PropositionalVariable(PropositionalVariableType.S)), 
 				new AtomicProposition(null, new PropositionalVariable(PropositionalVariableType.T)), 
 				new AtomicProposition(null, new PropositionalVariable(PropositionalVariableType.U)), 
-				new AtomicProposition(null, new PropositionalVariable(PropositionalVariableType.V)), 
-				new AtomicProposition(null, new PropositionalVariable(PropositionalVariableType.W))
+				new AtomicProposition(null, new PropositionalVariable(PropositionalVariableType.V))
 				));
 		
 		secondAtomicPropositions = new ArrayList<Proposition>(Arrays.asList(new AtomicProposition(null, new PropositionalVariable(PropositionalVariableType.P)), 
@@ -567,28 +506,44 @@ public class PropositionBuilder implements EventHandler<ActionEvent> {
 				new AtomicProposition(null, new PropositionalVariable(PropositionalVariableType.S)), 
 				new AtomicProposition(null, new PropositionalVariable(PropositionalVariableType.T)), 
 				new AtomicProposition(null, new PropositionalVariable(PropositionalVariableType.U)), 
-				new AtomicProposition(null, new PropositionalVariable(PropositionalVariableType.V)), 
-				new AtomicProposition(null, new PropositionalVariable(PropositionalVariableType.W))
+				new AtomicProposition(null, new PropositionalVariable(PropositionalVariableType.V))
 				));
 		
 		
 		
-		firstRelationalPropositions = new ArrayList<Proposition>(Arrays.asList(new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.X), new InstanceVariable(PlaceholderVariableType.X)), 
+		firstRelationalPropositions = new ArrayList<Proposition>(Arrays.asList(
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.W), new InstanceVariable(PlaceholderVariableType.W)), 
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.W), new InstanceVariable(PlaceholderVariableType.X)), 
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.W), new InstanceVariable(PlaceholderVariableType.Y)),
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.W), new InstanceVariable(PlaceholderVariableType.Z)),
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.X), new InstanceVariable(PlaceholderVariableType.W)), 
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.X), new InstanceVariable(PlaceholderVariableType.X)), 
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.X), new InstanceVariable(PlaceholderVariableType.Y)),
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.X), new InstanceVariable(PlaceholderVariableType.Z)),
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Y), new InstanceVariable(PlaceholderVariableType.W)), 
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Y), new InstanceVariable(PlaceholderVariableType.X)),
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Y), new InstanceVariable(PlaceholderVariableType.Y)),
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Y), new InstanceVariable(PlaceholderVariableType.Z)),
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Z), new InstanceVariable(PlaceholderVariableType.W)), 
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Z), new InstanceVariable(PlaceholderVariableType.X)),
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Z), new InstanceVariable(PlaceholderVariableType.Y)),
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Z), new InstanceVariable(PlaceholderVariableType.Z))
 				));
-		secondRelationalPropositions = new ArrayList<Proposition>(Arrays.asList(new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.X), new InstanceVariable(PlaceholderVariableType.X)), 
+		
+		secondRelationalPropositions = new ArrayList<Proposition>(Arrays.asList(
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.W), new InstanceVariable(PlaceholderVariableType.W)), 
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.W), new InstanceVariable(PlaceholderVariableType.X)), 
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.W), new InstanceVariable(PlaceholderVariableType.Y)),
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.W), new InstanceVariable(PlaceholderVariableType.Z)),
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.X), new InstanceVariable(PlaceholderVariableType.W)), 
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.X), new InstanceVariable(PlaceholderVariableType.X)), 
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.X), new InstanceVariable(PlaceholderVariableType.Y)),
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.X), new InstanceVariable(PlaceholderVariableType.Z)),
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Y), new InstanceVariable(PlaceholderVariableType.W)), 
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Y), new InstanceVariable(PlaceholderVariableType.X)),
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Y), new InstanceVariable(PlaceholderVariableType.Y)),
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Y), new InstanceVariable(PlaceholderVariableType.Z)),
+				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Z), new InstanceVariable(PlaceholderVariableType.W)), 
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Z), new InstanceVariable(PlaceholderVariableType.X)),
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Z), new InstanceVariable(PlaceholderVariableType.Y)),
 				new RelationalProposition(null, null, null, new InstanceVariable(PlaceholderVariableType.Z), new InstanceVariable(PlaceholderVariableType.Z))
@@ -618,6 +573,9 @@ public class PropositionBuilder implements EventHandler<ActionEvent> {
 	public void clearUi() {
 
 		resetTextField();
+		
+		spinner1.getValueFactory().setValue("Atomic");
+		spinner2.getValueFactory().setValue("Atomic");
 		
 		setChoiceToAtomic(firstOperandChoice);
 		setChoiceToAtomic(secondOperandChoice);

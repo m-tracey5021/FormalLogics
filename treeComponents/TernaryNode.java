@@ -113,17 +113,17 @@ public class TernaryNode {
 	
 	public void getAllNodes(ArrayList<TernaryNode> allNodes) {
 		allNodes.add(this);
-		if (this.leftNode == null & this.rightNode == null & this.centerNode == null) {
+		if (leftNode == null & rightNode == null & centerNode == null) {
 			return;
 		}else {
-			if (this.leftNode != null) {
-				this.leftNode.getAllNodes(allNodes);
+			if (leftNode != null) {
+				leftNode.getAllNodes(allNodes);
 			}
-			if (this.rightNode != null){
-				this.rightNode.getAllNodes(allNodes);
+			if (rightNode != null){
+				rightNode.getAllNodes(allNodes);
 			}
-			if (this.centerNode != null) {
-				this.centerNode.getAllNodes(allNodes);
+			if (centerNode != null) {
+				centerNode.getAllNodes(allNodes);
 			}
 			
 			
@@ -131,18 +131,18 @@ public class TernaryNode {
 	}
 	
 	public void getEmptyNodes(ArrayList<TernaryNode> emptyNodes) {
-		if (this.leftNode == null & this.rightNode == null & this.centerNode == null) {
+		if (leftNode == null & rightNode == null & centerNode == null) {
 			emptyNodes.add(this);
 			return;
 		}else {
-			if (this.leftNode != null) {
-				this.leftNode.getEmptyNodes(emptyNodes);
+			if (leftNode != null) {
+				leftNode.getEmptyNodes(emptyNodes);
 			}
-			if (this.rightNode != null){
-				this.rightNode.getEmptyNodes(emptyNodes);
+			if (rightNode != null){
+				rightNode.getEmptyNodes(emptyNodes);
 			}
-			if (this.centerNode != null) {
-				this.centerNode.getEmptyNodes(emptyNodes);
+			if (centerNode != null) {
+				centerNode.getEmptyNodes(emptyNodes);
 			}
 			
 			
@@ -158,15 +158,24 @@ public class TernaryNode {
 			return;
 		
 		}else {
-			if (this.leftNode != null) {
-				this.leftNode.getNodesToExpand(nodesToExpand);
+			if (leftNode != null) {
+				leftNode.getNodesToExpand(nodesToExpand);
 			}
-			if (this.rightNode != null){
-				this.rightNode.getNodesToExpand(nodesToExpand);
+			if (rightNode != null){
+				rightNode.getNodesToExpand(nodesToExpand);
 			}
-			if (this.centerNode != null) {
-				this.centerNode.getNodesToExpand(nodesToExpand);
+			if (centerNode != null) {
+				centerNode.getNodesToExpand(nodesToExpand);
 			}
+		}
+	}
+	
+	public void getNodesOnBranch(ArrayList<TernaryNode> nodesOnBranch) {
+		nodesOnBranch.add(this);
+		if (parentNode != null) {
+			parentNode.getNodesOnBranch(nodesOnBranch);
+		}else {
+			return;
 		}
 	}
 	
@@ -176,14 +185,14 @@ public class TernaryNode {
 		
 		}else {
 			
-			if (this.leftNode != null) {
-				this.leftNode.getTreeLayers(layerCount);
+			if (leftNode != null) {
+				leftNode.getTreeLayers(layerCount);
 			}
-			if (this.rightNode != null){
-				this.rightNode.getTreeLayers(layerCount);
+			if (rightNode != null){
+				rightNode.getTreeLayers(layerCount);
 			}
-			if (this.centerNode != null) {
-				this.centerNode.getTreeLayers(layerCount);
+			if (centerNode != null) {
+				centerNode.getTreeLayers(layerCount);
 			}
 		}
 		layerCount += 1;
@@ -197,14 +206,14 @@ public class TernaryNode {
 			return;
 		
 		}else {
-			if (this.leftNode != null) {
-				this.leftNode.getNodeSizes(sizes);
+			if (leftNode != null) {
+				leftNode.getNodeSizes(sizes);
 			}
-			if (this.rightNode != null){
-				this.rightNode.getNodeSizes(sizes);
+			if (rightNode != null){
+				rightNode.getNodeSizes(sizes);
 			}
-			if (this.centerNode != null) {
-				this.centerNode.getNodeSizes(sizes);
+			if (centerNode != null) {
+				centerNode.getNodeSizes(sizes);
 			}
 		}
 	}

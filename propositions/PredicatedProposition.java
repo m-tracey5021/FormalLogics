@@ -1,6 +1,7 @@
 package propositions;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -59,11 +60,9 @@ public class PredicatedProposition extends Proposition {
 	public boolean isVariableMatch(Quantifier comparedQuantifier) {
 		InstanceVariable externalVariable = comparedQuantifier.getInstanceVariable();
 		if (externalVariable.getPlaceholder() == instanceVariable.getPlaceholder()) {
-			
-			
-			
-			comparedQuantifier.getAppliesTo().put(this.getId(), instanceVariable);
-			//comparedQuantifier.getPredicatedPropositions().add(this);
+
+			comparedQuantifier.getAppliesTo().put(this.getId(), new ArrayList<InstanceVariable>(Arrays.asList(instanceVariable)));
+
 			quantifier = comparedQuantifier;
 
 			return true;
@@ -121,24 +120,9 @@ public class PredicatedProposition extends Proposition {
 		if (quantifier == null) {
 			copiedPredicatedProp = new PredicatedProposition(copiedAuxOps, null, predicate, instanceVariable.copy());
 		}else {
-
-			
-			//Quantifier copiedQuantifier = quantifier.copy();
-
-			//quantifier.getParentProposition().replaceAuxOp(quantifier, copiedQuantifier);
-			
-			//InstanceVariable instanceVarToAssign = copiedQuantifier.getAppliesTo().get(this.getId());
-			
-			
-			
 			
 			copiedPredicatedProp = new PredicatedProposition(copiedAuxOps, null, predicate, instanceVariable.copy());
-			//copiedPredicatedProp.startAssignment();
 
-			//copiedQuantifier.getAppliesTo().remove(this.getId());
-			//copiedQuantifier.getAppliesTo().put(copiedPredicatedProp.getId(), instanceVarToAssign);
-			
-			//copiedPredicatedProp.getQuantifier().getAppliesTo().add(copiedPredicatedProp.getInstanceVariable());
 		}
 		copiedPredicatedProp.assignVariablesForAll();
 		
